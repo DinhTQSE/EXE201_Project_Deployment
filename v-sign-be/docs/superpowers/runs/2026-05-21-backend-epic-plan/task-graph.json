@@ -1,0 +1,269 @@
+{
+  "generatedFrom": "planning-brief",
+  "nodes": [
+    {
+      "id": "evidence",
+      "title": "Instruction and user story evidence",
+      "goal": "Extract domain constraints, user stories, frontend verification gaps, and planning assumptions.",
+      "preferredSkillId": "evidence-synthesizer",
+      "expectedOutputContract": [
+        "List the instruction constraints that shape backend implementation.",
+        "Map visible epics and user stories to backend work areas.",
+        "Identify frontend API dependencies and mismatches."
+      ],
+      "domainChecklist": [
+        "epic/user story alignment",
+        "authentication",
+        "user profile",
+        "API contract"
+      ],
+      "briefSummary": "Reference baseline (must follow): - EXE101_Project_V-Sign_BE/BE-init.md Primary objective: - Produce a deterministic backend implementation plan per epic for V-SIGN with Java Spring Boot 3.x architecture, JWT security, Flyway migrations, and centralized exception handling as specified in BE-init.md. Planning context documents (must be used): - EXE101_Project_V-Sign_BE/docs/superpowers/working/2026-05-21-vsign-userstories-from-docx.md",
+      "skill": {
+        "id": "evidence-synthesizer",
+        "name": "Superpower Evidence Synthesizer",
+        "description": "Collects project evidence, assumptions, and context for downstream tasks.",
+        "keywords": [
+          "evidence",
+          "analysis",
+          "context",
+          "repository",
+          "facts",
+          "inputs",
+          "discovery"
+        ],
+        "mergeOrder": 20,
+        "requiredSections": [
+          "Objective",
+          "Repository Evidence",
+          "Findings",
+          "Recommended Inputs"
+        ],
+        "directory": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-evidence-synthesizer",
+        "promptPath": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-evidence-synthesizer\\SKILL.md",
+        "prompt": "# Superpower Evidence Synthesizer\n\nUse this template when a task needs repository facts, assumptions, implementation evidence, or source-backed observations.\n\nExpected output:\n- `## Objective`\n- `## Repository Evidence`\n- `## Findings`\n- `## Recommended Inputs`\n\nFocus:\n- Prefer direct repository evidence over speculation.\n- State assumptions explicitly when evidence is missing.\n- Highlight artifacts that downstream agents should consume.\n"
+      },
+      "dependencies": []
+    },
+    {
+      "id": "api-contracts",
+      "title": "Backend API contract plan",
+      "goal": "Define backend API contracts, request/response DTOs, auth requirements, validation rules, and persistence impact.",
+      "preferredSkillId": "architecture-planner",
+      "expectedOutputContract": [
+        "Produce a Markdown table with columns: Epic, User Story IDs, Endpoint, Method, Auth Role, Request DTO, Response DTO, Validation Rules, Error Codes, FE Dependency.",
+        "Use concrete endpoint paths, DTO names, validation rules, and error codes.",
+        "Call out PostgreSQL/Flyway implications for each API group."
+      ],
+      "domainChecklist": [
+        "API contract",
+        "PostgreSQL",
+        "validation",
+        "authentication",
+        "document upload",
+        "signature workflow"
+      ],
+      "briefSummary": "Reference baseline (must follow): - EXE101_Project_V-Sign_BE/BE-init.md Primary objective: - Produce a deterministic backend implementation plan per epic for V-SIGN with Java Spring Boot 3.x architecture, JWT security, Flyway migrations, and centralized exception handling as specified in BE-init.md. Planning context documents (must be used): - EXE101_Project_V-Sign_BE/docs/superpowers/working/2026-05-21-vsign-userstories-from-docx.md",
+      "skill": {
+        "id": "architecture-planner",
+        "name": "Superpower Architecture Planner",
+        "description": "Plans repo-native architecture, module boundaries, and execution flow.",
+        "keywords": [
+          "architecture",
+          "orchestrator",
+          "system",
+          "module",
+          "interface",
+          "flow",
+          "integration"
+        ],
+        "mergeOrder": 10,
+        "requiredSections": [
+          "Objective",
+          "Constraints",
+          "Proposed Architecture",
+          "Execution Notes"
+        ],
+        "directory": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-architecture-planner",
+        "promptPath": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-architecture-planner\\SKILL.md",
+        "prompt": "# Superpower Architecture Planner\n\nUse this template when a task needs system structure, interfaces, execution order, or component boundaries.\n\nExpected output:\n- `## Objective`\n- `## Constraints`\n- `## Proposed Architecture`\n- `## Execution Notes`\n\nFocus:\n- Reuse the existing project layout before proposing new modules.\n- Keep implementation slices small and isolated.\n- Call out integration points, file ownership, and failure modes.\n"
+      },
+      "dependencies": []
+    },
+    {
+      "id": "frontend-alignment",
+      "title": "Frontend/backend alignment plan",
+      "goal": "Translate frontend verification gaps into backend contract requirements and integration checks.",
+      "preferredSkillId": "evidence-synthesizer",
+      "expectedOutputContract": [
+        "Connect frontend mismatch/not-implemented rows to backend APIs.",
+        "Identify response fields the frontend needs.",
+        "Define contract verification gates."
+      ],
+      "domainChecklist": [
+        "API contract",
+        "testing",
+        "user profile",
+        "document upload"
+      ],
+      "briefSummary": "Reference baseline (must follow): - EXE101_Project_V-Sign_BE/BE-init.md Primary objective: - Produce a deterministic backend implementation plan per epic for V-SIGN with Java Spring Boot 3.x architecture, JWT security, Flyway migrations, and centralized exception handling as specified in BE-init.md. Planning context documents (must be used): - EXE101_Project_V-Sign_BE/docs/superpowers/working/2026-05-21-vsign-userstories-from-docx.md",
+      "skill": {
+        "id": "evidence-synthesizer",
+        "name": "Superpower Evidence Synthesizer",
+        "description": "Collects project evidence, assumptions, and context for downstream tasks.",
+        "keywords": [
+          "evidence",
+          "analysis",
+          "context",
+          "repository",
+          "facts",
+          "inputs",
+          "discovery"
+        ],
+        "mergeOrder": 20,
+        "requiredSections": [
+          "Objective",
+          "Repository Evidence",
+          "Findings",
+          "Recommended Inputs"
+        ],
+        "directory": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-evidence-synthesizer",
+        "promptPath": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-evidence-synthesizer\\SKILL.md",
+        "prompt": "# Superpower Evidence Synthesizer\n\nUse this template when a task needs repository facts, assumptions, implementation evidence, or source-backed observations.\n\nExpected output:\n- `## Objective`\n- `## Repository Evidence`\n- `## Findings`\n- `## Recommended Inputs`\n\nFocus:\n- Prefer direct repository evidence over speculation.\n- State assumptions explicitly when evidence is missing.\n- Highlight artifacts that downstream agents should consume.\n"
+      },
+      "dependencies": []
+    },
+    {
+      "id": "roadmap",
+      "title": "Delivery roadmap and sequencing",
+      "goal": "Sequence backend epics into an implementation roadmap with dependencies and verification gates.",
+      "preferredSkillId": "roadmap-planner",
+      "expectedOutputContract": [
+        "Order work by dependency and risk.",
+        "Mark parallelizable tasks.",
+        "Define validation, testing, and release gates."
+      ],
+      "domainChecklist": [
+        "delivery roadmap",
+        "testing",
+        "validation",
+        "PostgreSQL"
+      ],
+      "briefSummary": "Reference baseline (must follow): - EXE101_Project_V-Sign_BE/BE-init.md Primary objective: - Produce a deterministic backend implementation plan per epic for V-SIGN with Java Spring Boot 3.x architecture, JWT security, Flyway migrations, and centralized exception handling as specified in BE-init.md. Planning context documents (must be used): - EXE101_Project_V-Sign_BE/docs/superpowers/working/2026-05-21-vsign-userstories-from-docx.md",
+      "skill": {
+        "id": "roadmap-planner",
+        "name": "Superpower Roadmap Planner",
+        "description": "Builds phased delivery roadmaps with dependencies, gates, and implementation order.",
+        "keywords": [
+          "roadmap",
+          "delivery",
+          "phase",
+          "sequence",
+          "milestone",
+          "implementation"
+        ],
+        "mergeOrder": 35,
+        "requiredSections": [
+          "Objective",
+          "Phase 1",
+          "Phase 2",
+          "Phase 3",
+          "Verification Gates"
+        ],
+        "directory": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-roadmap-planner",
+        "promptPath": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-roadmap-planner\\SKILL.md",
+        "prompt": "# Superpower Roadmap Planner\n\nUse this template when a task needs a phased implementation roadmap.\n\nExpected output:\n- `## Objective`\n- `## Phase 1`\n- `## Phase 2`\n- `## Phase 3`\n- `## Verification Gates`\n\nFocus:\n- Sequence work by real dependencies.\n- Include concrete deliverables, owners, and validation gates per phase.\n- Make parallelizable work explicit.\n"
+      },
+      "dependencies": []
+    },
+    {
+      "id": "risk",
+      "title": "Domain risk and validation review",
+      "goal": "Identify backend delivery risks, contract risks, security risks, and audit gates.",
+      "preferredSkillId": "risk-reviewer",
+      "expectedOutputContract": [
+        "List concrete risks tied to the domain and frontend integration.",
+        "Include mitigation and test strategy per risk."
+      ],
+      "domainChecklist": [
+        "validation",
+        "testing",
+        "API contract",
+        "authentication"
+      ],
+      "briefSummary": "Reference baseline (must follow): - EXE101_Project_V-Sign_BE/BE-init.md Primary objective: - Produce a deterministic backend implementation plan per epic for V-SIGN with Java Spring Boot 3.x architecture, JWT security, Flyway migrations, and centralized exception handling as specified in BE-init.md. Planning context documents (must be used): - EXE101_Project_V-Sign_BE/docs/superpowers/working/2026-05-21-vsign-userstories-from-docx.md",
+      "skill": {
+        "id": "risk-reviewer",
+        "name": "Superpower Risk Reviewer",
+        "description": "Surfaces delivery risks, validations, and mitigation actions.",
+        "keywords": [
+          "risk",
+          "validation",
+          "smoke",
+          "test",
+          "failure",
+          "guardrail",
+          "mitigation"
+        ],
+        "mergeOrder": 30,
+        "requiredSections": [
+          "Objective",
+          "Risks",
+          "Validation Plan",
+          "Mitigations"
+        ],
+        "directory": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-risk-reviewer",
+        "promptPath": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-risk-reviewer\\SKILL.md",
+        "prompt": "# Superpower Risk Reviewer\n\nUse this template when a task needs validation strategy, risk analysis, or operational guardrails.\n\nExpected output:\n- `## Objective`\n- `## Risks`\n- `## Validation Plan`\n- `## Mitigations`\n\nFocus:\n- Prefer concrete risks tied to the current repo state.\n- Distinguish build-time, runtime, and workflow risks.\n- Keep mitigations small and directly actionable.\n"
+      },
+      "dependencies": []
+    },
+    {
+      "id": "report",
+      "title": "Final backend epic plan assembly",
+      "goal": "Merge worker outputs into a traceable backend epic/API alignment plan.",
+      "preferredSkillId": "report-assembler",
+      "expectedOutputContract": [
+        "Summarize decisions per epic.",
+        "Preserve API contract, frontend alignment, testing, and delivery roadmap details.",
+        "State assumptions and remaining gaps."
+      ],
+      "domainChecklist": [
+        "epic/user story alignment",
+        "API contract",
+        "delivery roadmap",
+        "testing"
+      ],
+      "briefSummary": "Reference baseline (must follow): - EXE101_Project_V-Sign_BE/BE-init.md Primary objective: - Produce a deterministic backend implementation plan per epic for V-SIGN with Java Spring Boot 3.x architecture, JWT security, Flyway migrations, and centralized exception handling as specified in BE-init.md. Planning context documents (must be used): - EXE101_Project_V-Sign_BE/docs/superpowers/working/2026-05-21-vsign-userstories-from-docx.md",
+      "skill": {
+        "id": "report-assembler",
+        "name": "Superpower Report Assembler",
+        "description": "Builds concise merged delivery reports from worker outputs.",
+        "keywords": [
+          "report",
+          "merge",
+          "summary",
+          "delivery",
+          "handoff",
+          "final"
+        ],
+        "mergeOrder": 40,
+        "requiredSections": [
+          "Objective",
+          "Summary",
+          "Decisions",
+          "Next Actions"
+        ],
+        "directory": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-report-assembler",
+        "promptPath": "C:\\Users\\KHAI\\Documents\\Exe201\\source-code\\EXE101_Project_V-Sign_FE\\skills\\superpower-report-assembler\\SKILL.md",
+        "prompt": "# Superpower Report Assembler\n\nUse this template when a task needs a concise final report, merge summary, or delivery handoff.\n\nExpected output:\n- `## Objective`\n- `## Summary`\n- `## Decisions`\n- `## Next Actions`\n\nFocus:\n- Merge inputs deterministically.\n- Keep the summary high signal.\n- Preserve references to source task outputs.\n"
+      },
+      "dependencies": [
+        "evidence",
+        "api-contracts",
+        "frontend-alignment",
+        "roadmap",
+        "risk"
+      ]
+    }
+  ]
+}

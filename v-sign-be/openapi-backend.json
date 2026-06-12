@@ -1,0 +1,3251 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "OpenAPI definition",
+    "version" : "v0"
+  },
+  "servers" : [ {
+    "url" : "http://localhost",
+    "description" : "Generated server url"
+  } ],
+  "paths" : {
+    "/api/v1/lessons/{lessonId}/progress" : {
+      "put" : {
+        "tags" : [ "learning-catalog-controller" ],
+        "operationId" : "updateProgress",
+        "parameters" : [ {
+          "name" : "lessonId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateProgressRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseProgressResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions/checkout" : {
+      "post" : {
+        "tags" : [ "subscription-controller" ],
+        "operationId" : "checkout",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CheckoutIntentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseCheckoutIntentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/signature-workflows/attempts" : {
+      "post" : {
+        "tags" : [ "signature-workflow-controller" ],
+        "operationId" : "submit",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SubmitSignatureAttemptRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseSignatureAttemptResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quiz-attempts/{attemptId}/submit" : {
+      "post" : {
+        "tags" : [ "quiz-attempt-controller" ],
+        "operationId" : "submit_1",
+        "parameters" : [ {
+          "name" : "attemptId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SubmitAttemptRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseQuizResultResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/orders" : {
+      "post" : {
+        "tags" : [ "payment-controller" ],
+        "operationId" : "createOrder",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreatePaymentOrderRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponsePaymentOrderResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/change-password" : {
+      "post" : {
+        "tags" : [ "profile-controller" ],
+        "operationId" : "changePassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gamification/xp-awards" : {
+      "post" : {
+        "tags" : [ "gamification-controller" ],
+        "operationId" : "awardXp",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/XpAwardRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseXpAwardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register" : {
+      "post" : {
+        "tags" : [ "auth-controller" ],
+        "operationId" : "register",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/password-reset/request" : {
+      "post" : {
+        "tags" : [ "auth-controller" ],
+        "operationId" : "requestPasswordReset",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login" : {
+      "post" : {
+        "tags" : [ "auth-controller" ],
+        "operationId" : "login",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessments/{assessmentId}/submissions" : {
+      "post" : {
+        "tags" : [ "assessment-controller" ],
+        "operationId" : "submit_2",
+        "parameters" : [ {
+          "name" : "assessmentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssessmentSubmissionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAssessmentSubmissionResultResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/profile" : {
+      "patch" : {
+        "tags" : [ "profile-controller" ],
+        "operationId" : "updateProfile",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/payments/{transactionId}" : {
+      "patch" : {
+        "tags" : [ "admin-payment-controller" ],
+        "operationId" : "overrideStatus",
+        "parameters" : [ {
+          "name" : "transactionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ManualPaymentStatusRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminPaymentRecordResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/content/review-queue/{contentId}" : {
+      "patch" : {
+        "tags" : [ "admin-content-controller" ],
+        "operationId" : "decide",
+        "parameters" : [ {
+          "name" : "contentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReviewDecisionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseReviewQueueItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/units" : {
+      "get" : {
+        "tags" : [ "learning-catalog-controller" ],
+        "operationId" : "listUnits",
+        "parameters" : [ {
+          "name" : "publishedOnly",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : true
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 10
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseUnitListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/units/{unitId}/chapters" : {
+      "get" : {
+        "tags" : [ "learning-catalog-controller" ],
+        "operationId" : "listChapters",
+        "parameters" : [ {
+          "name" : "unitId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseChapterListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions/plans" : {
+      "get" : {
+        "tags" : [ "subscription-controller" ],
+        "operationId" : "legacyPlans",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseListSubscriptionPlanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subscription/plans" : {
+      "get" : {
+        "tags" : [ "plan-controller" ],
+        "operationId" : "plans",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseListSubscriptionPlanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quiz-attempts/{attemptId}/review" : {
+      "get" : {
+        "tags" : [ "quiz-attempt-controller" ],
+        "operationId" : "review",
+        "parameters" : [ {
+          "name" : "attemptId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseQuizReviewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/{transactionId}" : {
+      "get" : {
+        "tags" : [ "payment-controller" ],
+        "operationId" : "status",
+        "parameters" : [ {
+          "name" : "transactionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponsePaymentStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me" : {
+      "get" : {
+        "tags" : [ "profile-controller" ],
+        "operationId" : "getProfile",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/subscription" : {
+      "get" : {
+        "tags" : [ "me-monetization-controller" ],
+        "operationId" : "subscription",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseSubscriptionSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/payments" : {
+      "get" : {
+        "tags" : [ "me-monetization-controller" ],
+        "operationId" : "payments",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseListPaymentStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lessons/{lessonId}" : {
+      "get" : {
+        "tags" : [ "learning-catalog-controller" ],
+        "operationId" : "getLesson",
+        "parameters" : [ {
+          "name" : "lessonId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseLessonDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lessons/{lessonId}/quiz" : {
+      "get" : {
+        "tags" : [ "quiz-controller" ],
+        "operationId" : "getLessonQuiz",
+        "parameters" : [ {
+          "name" : "lessonId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseQuizResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/learning/practice-items" : {
+      "get" : {
+        "tags" : [ "learning-controller" ],
+        "operationId" : "listPracticeItems",
+        "parameters" : [ {
+          "name" : "category",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "level",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 10
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponsePracticeItemsPageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/learning/practice-items/{itemId}" : {
+      "get" : {
+        "tags" : [ "learning-controller" ],
+        "operationId" : "getPracticeItem",
+        "parameters" : [ {
+          "name" : "itemId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponsePracticeItemDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leaderboards" : {
+      "get" : {
+        "tags" : [ "leaderboard-controller" ],
+        "operationId" : "leaderboard",
+        "parameters" : [ {
+          "name" : "period",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "WEEKLY",
+            "enum" : [ "WEEKLY", "MONTHLY" ]
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "maximum" : 50,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 10
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseLeaderboardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gamification/summary" : {
+      "get" : {
+        "tags" : [ "gamification-controller" ],
+        "operationId" : "summary",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseUserProgressSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dictionary" : {
+      "get" : {
+        "tags" : [ "dictionary-public-controller" ],
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "category",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "keyword",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        }, {
+          "name" : "difficulty",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseDictionaryEntryPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dictionary/{entryId}/practice-target" : {
+      "get" : {
+        "tags" : [ "dictionary-public-controller" ],
+        "operationId" : "practiceTarget",
+        "parameters" : [ {
+          "name" : "entryId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponsePracticeTargetResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chapters/{chapterId}/lessons" : {
+      "get" : {
+        "tags" : [ "learning-catalog-controller" ],
+        "operationId" : "listLessons",
+        "parameters" : [ {
+          "name" : "chapterId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseLessonListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessments" : {
+      "get" : {
+        "tags" : [ "assessment-controller" ],
+        "operationId" : "list_1",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseListAssessmentSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessments/{assessmentId}" : {
+      "get" : {
+        "tags" : [ "assessment-controller" ],
+        "operationId" : "detail",
+        "parameters" : [ {
+          "name" : "assessmentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAssessmentDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users" : {
+      "get" : {
+        "tags" : [ "admin-user-controller" ],
+        "operationId" : "listUsers",
+        "parameters" : [ {
+          "name" : "role",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminUserListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/payments" : {
+      "get" : {
+        "tags" : [ "admin-payment-controller" ],
+        "operationId" : "listPayments",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminPaymentPageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/kpis" : {
+      "get" : {
+        "tags" : [ "admin-kpi-controller" ],
+        "operationId" : "kpis",
+        "parameters" : [ {
+          "name" : "fromDate",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }, {
+          "name" : "toDate",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminKpiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/content/review-queue" : {
+      "get" : {
+        "tags" : [ "admin-content-controller" ],
+        "operationId" : "listReviewQueue",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseReviewQueueResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs" : {
+      "get" : {
+        "tags" : [ "admin-audit-controller" ],
+        "operationId" : "listAuditLogs",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseListAdminAuditLogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "UpdateProgressRequest" : {
+        "type" : "object",
+        "properties" : {
+          "completionPct" : {
+            "maximum" : 100,
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lastPositionSeconds" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "phase" : {
+            "type" : "string"
+          },
+          "currentQuestionIndex" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "NOT_STARTED", "IN_PROGRESS", "COMPLETED" ]
+          }
+        }
+      },
+      "ProgressResponse" : {
+        "type" : "object",
+        "properties" : {
+          "lessonId" : {
+            "type" : "string"
+          },
+          "completionPct" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lastPositionSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "phase" : {
+            "type" : "string"
+          },
+          "currentQuestionIndex" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseProgressResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ProgressResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "CheckoutIntentRequest" : {
+        "required" : [ "planId", "userId" ],
+        "type" : "object",
+        "properties" : {
+          "planId" : {
+            "type" : "string"
+          },
+          "userId" : {
+            "type" : "string"
+          },
+          "successUrl" : {
+            "type" : "string"
+          },
+          "cancelUrl" : {
+            "type" : "string"
+          }
+        }
+      },
+      "CheckoutIntentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "checkoutId" : {
+            "type" : "string"
+          },
+          "planId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "checkoutUrl" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseCheckoutIntentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/CheckoutIntentResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "SubmitSignatureAttemptRequest" : {
+        "required" : [ "practiceItemId", "signatureVector" ],
+        "type" : "object",
+        "properties" : {
+          "userStoryId" : {
+            "type" : "string"
+          },
+          "practiceItemId" : {
+            "type" : "string"
+          },
+          "documentUploadId" : {
+            "type" : "string"
+          },
+          "signatureVector" : {
+            "type" : "string"
+          },
+          "durationMs" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "SignatureAttemptResponse" : {
+        "type" : "object",
+        "properties" : {
+          "attemptId" : {
+            "type" : "string"
+          },
+          "practiceItemId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "score" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "feedbackCodes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "SuccessResponseSignatureAttemptResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/SignatureAttemptResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "QuizAnswerRequest" : {
+        "required" : [ "questionId", "selectedAnswerId" ],
+        "type" : "object",
+        "properties" : {
+          "questionId" : {
+            "type" : "string"
+          },
+          "selectedAnswerId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SubmitAttemptRequest" : {
+        "type" : "object",
+        "properties" : {
+          "answers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/QuizAnswerRequest"
+            }
+          },
+          "durationSeconds" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "QuizResultResponse" : {
+        "type" : "object",
+        "properties" : {
+          "attemptId" : {
+            "type" : "string"
+          },
+          "score" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "passed" : {
+            "type" : "boolean"
+          },
+          "xpAwarded" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "reviewAvailable" : {
+            "type" : "boolean"
+          },
+          "timedOut" : {
+            "type" : "boolean"
+          },
+          "unansweredCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseQuizResultResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/QuizResultResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "CreatePaymentOrderRequest" : {
+        "required" : [ "provider" ],
+        "type" : "object",
+        "properties" : {
+          "provider" : {
+            "pattern" : "MOMO|ZALOPAY",
+            "type" : "string"
+          },
+          "planId" : {
+            "type" : "string"
+          },
+          "planType" : {
+            "pattern" : "MONTHLY|YEARLY",
+            "type" : "string"
+          },
+          "amount" : {
+            "minimum" : 49000,
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "PaymentOrderResponse" : {
+        "type" : "object",
+        "properties" : {
+          "transactionId" : {
+            "type" : "string"
+          },
+          "providerTransactionId" : {
+            "type" : "string"
+          },
+          "provider" : {
+            "type" : "string"
+          },
+          "planId" : {
+            "type" : "string"
+          },
+          "planType" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "qrCodeData" : {
+            "type" : "string"
+          },
+          "deepLink" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "type" : "string"
+          },
+          "qrCodeUrl" : {
+            "type" : "string"
+          },
+          "expiresInSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponsePaymentOrderResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/PaymentOrderResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "ChangePasswordRequest" : {
+        "required" : [ "currentPassword", "newPassword" ],
+        "type" : "object",
+        "properties" : {
+          "currentPassword" : {
+            "type" : "string"
+          },
+          "newPassword" : {
+            "maxLength" : 2147483647,
+            "minLength" : 8,
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseVoid" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "object"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "XpAwardRequest" : {
+        "required" : [ "eventId", "source" ],
+        "type" : "object",
+        "properties" : {
+          "eventId" : {
+            "type" : "string"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "xpDelta" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "activityDate" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }
+      },
+      "SuccessResponseXpAwardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/XpAwardResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "XpAwardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "type" : "string"
+          },
+          "eventId" : {
+            "type" : "string"
+          },
+          "totalXp" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "xpAwarded" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "duplicate" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "RegisterRequest" : {
+        "required" : [ "email", "password" ],
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "password" : {
+            "maxLength" : 2147483647,
+            "minLength" : 8,
+            "type" : "string"
+          },
+          "fullName" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "displayName" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        }
+      },
+      "AuthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "accessToken" : {
+            "type" : "string"
+          },
+          "tokenType" : {
+            "type" : "string"
+          },
+          "user" : {
+            "$ref" : "#/components/schemas/AuthUserResponse"
+          }
+        }
+      },
+      "AuthUserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "bio" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "accountType" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseAuthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AuthResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "PasswordResetRequest" : {
+        "required" : [ "email" ],
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          }
+        }
+      },
+      "LoginRequest" : {
+        "required" : [ "email", "password" ],
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "password" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AnswerRequest" : {
+        "required" : [ "questionId" ],
+        "type" : "object",
+        "properties" : {
+          "questionId" : {
+            "type" : "string"
+          },
+          "selectedOptionId" : {
+            "type" : "string"
+          },
+          "selectedAnswerId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AssessmentSubmissionRequest" : {
+        "required" : [ "userId" ],
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "type" : "string"
+          },
+          "answers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AnswerRequest"
+            }
+          }
+        }
+      },
+      "AssessmentSubmissionResultResponse" : {
+        "type" : "object",
+        "properties" : {
+          "assessmentId" : {
+            "type" : "string"
+          },
+          "userId" : {
+            "type" : "string"
+          },
+          "score" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "passed" : {
+            "type" : "boolean"
+          },
+          "correctAnswers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalQuestions" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "awardedXp" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseAssessmentSubmissionResultResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AssessmentSubmissionResultResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "UpdateProfileRequest" : {
+        "type" : "object",
+        "properties" : {
+          "fullName" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "displayName" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "avatarUrl" : {
+            "pattern" : "^$|^https?://.+",
+            "type" : "string"
+          },
+          "bio" : {
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        }
+      },
+      "BadgeSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "badgeId" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "iconUrl" : {
+            "type" : "string"
+          },
+          "earnedAt" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ProfileResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "bio" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "accountType" : {
+            "type" : "string"
+          },
+          "totalXp" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currentStreak" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "longestStreak" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "subscription" : {
+            "$ref" : "#/components/schemas/SubscriptionSummaryResponse"
+          },
+          "badges" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BadgeSummaryResponse"
+            }
+          }
+        }
+      },
+      "SubscriptionSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "planType" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "startDate" : {
+            "type" : "string"
+          },
+          "endDate" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseProfileResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ProfileResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "ManualPaymentStatusRequest" : {
+        "required" : [ "reason", "status" ],
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "maxLength" : 500,
+            "minLength" : 10,
+            "type" : "string"
+          }
+        }
+      },
+      "AdminPaymentRecordResponse" : {
+        "type" : "object",
+        "properties" : {
+          "transactionId" : {
+            "type" : "string"
+          },
+          "userEmail" : {
+            "type" : "string"
+          },
+          "planId" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "provider" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string"
+          },
+          "overrideReason" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseAdminPaymentRecordResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AdminPaymentRecordResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "ReviewDecisionRequest" : {
+        "required" : [ "decision", "reason" ],
+        "type" : "object",
+        "properties" : {
+          "decision" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "maxLength" : 500,
+            "minLength" : 10,
+            "type" : "string"
+          }
+        }
+      },
+      "ReviewQueueItemResponse" : {
+        "type" : "object",
+        "properties" : {
+          "contentId" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "contentType" : {
+            "type" : "string"
+          },
+          "submittedBy" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "submittedAt" : {
+            "type" : "string"
+          },
+          "reviewedBy" : {
+            "type" : "string"
+          },
+          "reviewedAt" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseReviewQueueItemResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ReviewQueueItemResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "SuccessResponseUnitListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/UnitListResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "UnitListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "units" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UnitSummaryResponse"
+            }
+          }
+        }
+      },
+      "UnitSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "unitId" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "thumbnailUrl" : {
+            "type" : "string"
+          },
+          "chapterCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "orderIndex" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "ChapterListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "unitId" : {
+            "type" : "string"
+          },
+          "chapters" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ChapterSummaryResponse"
+            }
+          }
+        }
+      },
+      "ChapterSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "chapterId" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "lessonCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "orderIndex" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "requiresPremium" : {
+            "type" : "boolean"
+          },
+          "locked" : {
+            "type" : "boolean"
+          },
+          "completionPercent" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseChapterListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ChapterListResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "SubscriptionPlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "planId" : {
+            "type" : "string"
+          },
+          "planType" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "price" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "durationDays" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "active" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "SuccessResponseListSubscriptionPlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SubscriptionPlanResponse"
+            }
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "QuizReviewQuestionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "questionId" : {
+            "type" : "string"
+          },
+          "selectedAnswerId" : {
+            "type" : "string"
+          },
+          "correctAnswerId" : {
+            "type" : "string"
+          },
+          "correct" : {
+            "type" : "boolean"
+          },
+          "explanation" : {
+            "type" : "string"
+          }
+        }
+      },
+      "QuizReviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "attemptId" : {
+            "type" : "string"
+          },
+          "score" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "passed" : {
+            "type" : "boolean"
+          },
+          "questions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/QuizReviewQuestionResponse"
+            }
+          }
+        }
+      },
+      "SuccessResponseQuizReviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/QuizReviewResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "PaymentStatusResponse" : {
+        "type" : "object",
+        "properties" : {
+          "transactionId" : {
+            "type" : "string"
+          },
+          "providerTransactionId" : {
+            "type" : "string"
+          },
+          "provider" : {
+            "type" : "string"
+          },
+          "planType" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "retryable" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "SuccessResponsePaymentStatusResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/PaymentStatusResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "SuccessResponseSubscriptionSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/SubscriptionSummaryResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "SuccessResponseListPaymentStatusResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PaymentStatusResponse"
+            }
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "LessonDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "lessonId" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "videoUrl" : {
+            "type" : "string"
+          },
+          "requiresPremium" : {
+            "type" : "boolean"
+          },
+          "progress" : {
+            "$ref" : "#/components/schemas/LessonProgressCheckpointResponse"
+          }
+        }
+      },
+      "LessonProgressCheckpointResponse" : {
+        "type" : "object",
+        "properties" : {
+          "completionPct" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lastPositionSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "phase" : {
+            "type" : "string"
+          },
+          "currentQuestionIndex" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseLessonDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/LessonDetailResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "OptionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        }
+      },
+      "QuestionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "prompt" : {
+            "type" : "string"
+          },
+          "options" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/OptionResponse"
+            }
+          },
+          "correctAnswerId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "QuizResponse" : {
+        "type" : "object",
+        "properties" : {
+          "lessonId" : {
+            "type" : "string"
+          },
+          "quizId" : {
+            "type" : "string"
+          },
+          "attemptId" : {
+            "type" : "string"
+          },
+          "questions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/QuestionResponse"
+            }
+          }
+        }
+      },
+      "SuccessResponseQuizResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/QuizResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "PracticeItemSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "itemId" : {
+            "type" : "string"
+          },
+          "lessonId" : {
+            "type" : "string"
+          },
+          "category" : {
+            "type" : "string"
+          },
+          "level" : {
+            "type" : "string"
+          },
+          "expectedGloss" : {
+            "type" : "string"
+          }
+        }
+      },
+      "PracticeItemsPageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PracticeItemSummaryResponse"
+            }
+          }
+        }
+      },
+      "SuccessResponsePracticeItemsPageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/PracticeItemsPageResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "PracticeItemDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "itemId" : {
+            "type" : "string"
+          },
+          "lessonId" : {
+            "type" : "string"
+          },
+          "category" : {
+            "type" : "string"
+          },
+          "level" : {
+            "type" : "string"
+          },
+          "expectedGloss" : {
+            "type" : "string"
+          },
+          "rubric" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "SuccessResponsePracticeItemDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/PracticeItemDetailResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "LeaderboardEntryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "rank" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "userId" : {
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          },
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "xp" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "LeaderboardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "period" : {
+            "type" : "string",
+            "enum" : [ "WEEKLY", "MONTHLY" ]
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "entries" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LeaderboardEntryResponse"
+            }
+          },
+          "currentUser" : {
+            "$ref" : "#/components/schemas/LeaderboardEntryResponse"
+          }
+        }
+      },
+      "SuccessResponseLeaderboardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/LeaderboardResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "BadgeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "badgeId" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "earnedAt" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseUserProgressSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/UserProgressSummaryResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "UserProgressSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "type" : "string"
+          },
+          "totalXp" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currentStreak" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "longestStreak" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "badges" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BadgeResponse"
+            }
+          }
+        }
+      },
+      "DictionaryEntryPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DictionaryEntryResponse"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DictionaryEntryResponse"
+            }
+          }
+        }
+      },
+      "DictionaryEntryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "entryId" : {
+            "type" : "string"
+          },
+          "word" : {
+            "type" : "string"
+          },
+          "keyword" : {
+            "type" : "string"
+          },
+          "category" : {
+            "type" : "string"
+          },
+          "difficulty" : {
+            "type" : "string"
+          },
+          "difficultyLevel" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "videoUrl" : {
+            "type" : "string"
+          },
+          "thumbnailUrl" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseDictionaryEntryPage" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/DictionaryEntryPage"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "PracticeTargetResponse" : {
+        "type" : "object",
+        "properties" : {
+          "entryId" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lessonId" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "requiresPremium" : {
+            "type" : "boolean"
+          },
+          "unitId" : {
+            "type" : "string"
+          },
+          "chapterId" : {
+            "type" : "string"
+          },
+          "lessonKey" : {
+            "type" : "string"
+          },
+          "quizId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponsePracticeTargetResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/PracticeTargetResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "LessonListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "chapterId" : {
+            "type" : "string"
+          },
+          "lessons" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LessonSummaryResponse"
+            }
+          }
+        }
+      },
+      "LessonSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "lessonId" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "durationSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "orderIndex" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "requiresPremium" : {
+            "type" : "boolean"
+          },
+          "locked" : {
+            "type" : "boolean"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseLessonListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/LessonListResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AssessmentSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "questionCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "passingScore" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseListAssessmentSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AssessmentSummaryResponse"
+            }
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AssessmentDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "passingScore" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "questions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/QuestionResponse"
+            }
+          }
+        }
+      },
+      "SuccessResponseAssessmentDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AssessmentDetailResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AdminUserListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "users" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminUserResponse"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "AdminUserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "accountType" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseAdminUserListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AdminUserListResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AdminPaymentPageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "payments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminPaymentRecordResponse"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseAdminPaymentPageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AdminPaymentPageResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AdminKpiResponse" : {
+        "type" : "object",
+        "properties" : {
+          "successfulTransactions" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalRevenueVnd" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "activeUsers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "premiumUsers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pendingReviews" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseAdminKpiResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AdminKpiResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "ReviewQueueResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewQueueItemResponse"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseReviewQueueResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ReviewQueueResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AdminAuditLogResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "actorEmail" : {
+            "type" : "string"
+          },
+          "action" : {
+            "type" : "string"
+          },
+          "targetType" : {
+            "type" : "string"
+          },
+          "targetId" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SuccessResponseListAdminAuditLogResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminAuditLogResponse"
+            }
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      }
+    }
+  }
+}

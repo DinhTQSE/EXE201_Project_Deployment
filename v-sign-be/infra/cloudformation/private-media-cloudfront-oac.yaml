@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: V-Sign private S3 media bucket served only through CloudFront OAC.
+
+Parameters:
+  BucketName:
+    Type: String
+    Default: ""
+    Description: Optional globally unique S3 bucket name. Leave empty to let CloudFormation generate one.
+  PriceClass:
+    Type: String
+    Default: PriceClass_200
+    AllowedValues:
+      - PriceClass_100
+      - PriceClass_200
+      - PriceClass_All
+    Description: PriceClass_200 keeps Asia edge locations available for Vietnam users.
+
+Conditions:
+  HasBucketName: !Not [!Equals [!Ref BucketName, ""]]
+
+Resources:
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !If [HasBucketName, !Ref BucketName, !Ref AWS::NoValue]
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            AllowedHeaders:
+              - "*"
+            MaxAge: 3600
+
+  MediaOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-media-oac"
+        Description: OAC for V-Sign private S3 media bucket.
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  MediaDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: V-Sign private media CDN.
+        Enabled: true
+        HttpVersion: http2and3
+        PriceClass: !Ref PriceClass
+        Origins:
+          - Id: VSignPrivateS3MediaOrigin
+            DomainName: !GetAtt MediaBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt MediaOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: VSignPrivateS3MediaOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  MediaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MediaBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${MediaBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${MediaDistribution}"
+
+Outputs:
+  BucketName:
+    Description: Private S3 bucket name.
+    Value: !Ref MediaBucket
+  DistributionId:
+    Description: CloudFront distribution ID.
+    Value: !Ref MediaDistribution
+  CloudFrontDomainName:
+    Description: CloudFront distribution domain name.
+    Value: !GetAtt MediaDistribution.DomainName
+  CloudFrontBaseUrl:
+    Description: Base URL to store in DB when building media URLs.
+    Value: !Sub "https://${MediaDistribution.DomainName}"
