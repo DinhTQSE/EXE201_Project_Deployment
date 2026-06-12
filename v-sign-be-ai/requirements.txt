@@ -1,0 +1,11 @@
+mediapipe==0.10.9
+opencv-python
+numpy
+pandas
+scikit-learn
+torch
+matplotlib
+tqdm
+fastapi
+uvicorn[standard]
+python-multipart

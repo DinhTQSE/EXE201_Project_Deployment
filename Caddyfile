@@ -1,0 +1,30 @@
+{$APP_DOMAIN:localhost} {
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    handle_path /ai/* {
+        request_body {
+            max_size 512KB
+        }
+        reverse_proxy ai:8000
+    }
+
+    handle /api/v1/* {
+        request_body {
+            max_size 1MB
+        }
+        uri replace /api/v1 /V-sign/api/v1
+        reverse_proxy backend:8080
+    }
+
+    handle {
+        root * /usr/share/caddy
+        try_files {path} /index.html
+        file_server
+    }
+}
