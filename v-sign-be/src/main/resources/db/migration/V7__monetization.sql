@@ -58,12 +58,3 @@ values
 ('pro-monthly', 'MONTHLY', 'Premium Monthly', 49000, 49000, 'VND', 30, true, true, 1),
 ('pro-yearly', 'YEARLY', 'Premium Yearly', 399000, 399000, 'VND', 365, true, true, 2),
 ('school', null, 'School Plan', 1990000, 1990000, 'VND', 365, true, false, 3);
-
-insert into user_subscriptions (email, plan_type, status, started_at, expires_at) values
-('premium@vsign.vn', 'MONTHLY', 'ACTIVE', '2026-05-21T00:00:00+07:00', '2026-06-20T00:00:00+07:00');
-
-insert into payment_orders
-(transaction_id, provider_transaction_id, provider, plan_id, plan_type, amount, currency, status, qr_code_data, deep_link, expires_at, qr_code_url, expires_in_seconds, retryable, user_email, created_at, updated_at)
-values
-('txn-1001', 'MOMO-seed-1001', 'MOMO', 'pro-monthly', 'MONTHLY', 49000, 'VND', 'PENDING', 'VSIGN|MOMO|MONTHLY|txn-1001|49000', 'momo://payment/txn-1001', '2026-05-10T08:05:00+07:00', 'https://pay.vsign.test/qr/txn-1001', 300, true, 'learner.one@vsign.test', '2026-05-10T08:00:00+07:00', '2026-05-10T08:00:00+07:00'),
-('txn-1002', 'ZALOPAY-seed-1002', 'ZALOPAY', 'pro-yearly', 'YEARLY', 199000, 'VND', 'PAID', 'VSIGN|ZALOPAY|YEARLY|txn-1002|199000', 'zalopay://payment/txn-1002', '2026-05-11T08:05:00+07:00', 'https://pay.vsign.test/qr/txn-1002', 300, false, 'learner.two@vsign.test', '2026-05-11T08:00:00+07:00', '2026-05-11T08:03:00+07:00');

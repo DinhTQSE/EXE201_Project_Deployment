@@ -1,5 +1,6 @@
 package com.vsign.backend.learning;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -8,11 +9,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vsign.backend.common.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -27,6 +30,12 @@ class LearningWorkflowIT {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private JwtService jwtService;
 
     @Test
     void listsPracticeItemsWithPagingAndFilters() throws Exception {
@@ -109,7 +118,7 @@ class LearningWorkflowIT {
     @Test
     void submitsSignatureWorkflowAttemptWithAiPredictionMetadata() throws Exception {
         String token = registerAndReturnToken("signature-ai@vsign.com");
-        mockMvc.perform(post("/api/v1/signature-workflows/attempts")
+        MvcResult result = mockMvc.perform(post("/api/v1/signature-workflows/attempts")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -125,7 +134,9 @@ class LearningWorkflowIT {
                                   "correct": true,
                                   "framesProcessed": 24,
                                   "handsDetectedFrames": 21,
-                                  "inferenceMs": 312.5
+                                  "inferenceMs": 312.5,
+                                  "modelVersion": "branch-bilstm-attention-v2",
+                                  "labelVersion": "mvp-3-units-20260609"
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -136,7 +147,58 @@ class LearningWorkflowIT {
                 .andExpect(jsonPath("$.data.predictedGloss").value("XIN_CHAO"))
                 .andExpect(jsonPath("$.data.confidence").value(0.93))
                 .andExpect(jsonPath("$.data.correct").value(true))
-                .andExpect(jsonPath("$.data.feedbackCodes[0]").value("SIGN_MATCH"));
+                .andExpect(jsonPath("$.data.feedbackCodes[0]").value("SIGN_MATCH"))
+                .andReturn();
+
+        String attemptId = objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data")
+                .path("attemptId")
+                .asText();
+        String modelVersion = jdbcTemplate.queryForObject(
+                "select model_version from signature_attempt_logs where attempt_id = ?",
+                String.class,
+                attemptId
+        );
+        String labelVersion = jdbcTemplate.queryForObject(
+                "select label_version from signature_attempt_logs where attempt_id = ?",
+                String.class,
+                attemptId
+        );
+        assertThat(modelVersion).isEqualTo("branch-bilstm-attention-v2");
+        assertThat(labelVersion).isEqualTo("mvp-3-units-20260609");
+    }
+
+    @Test
+    void rateLimitsSignatureWorkflowAttemptSpamPerUser() throws Exception {
+        String token = registerAndReturnToken("signature-rate-limit@vsign.com");
+        String body = """
+                {
+                  "userStoryId": "US-AI-RATE-LIMIT",
+                  "practiceItemId": "practice-hello",
+                  "signatureVector": "ai:ok:XIN_CHAO:0.90:24:21",
+                  "durationMs": 2800,
+                  "aiStatus": "ok",
+                  "targetGloss": "XIN_CHAO",
+                  "predictedGloss": "XIN_CHAO",
+                  "confidence": 0.90,
+                  "correct": true
+                }
+                """;
+
+        for (int i = 0; i < 12; i += 1) {
+            mockMvc.perform(post("/api/v1/signature-workflows/attempts")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(post("/api/v1/signature-workflows/attempts")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
     }
 
     @Test
@@ -224,6 +286,25 @@ class LearningWorkflowIT {
                 .andExpect(jsonPath("$.code").value("PREMIUM_REQUIRED"))
                 .andExpect(jsonPath("$.data").doesNotExist())
                 .andExpect(jsonPath("$.videoUrl").doesNotExist());
+    }
+
+    @Test
+    void premiumLessonUnlockRequiresActiveSubscriptionNotAccountTypeOnly() throws Exception {
+        String accountTypeOnlyEmail = "premium-account-type-only@vsign.com";
+        String accountTypeOnlyToken = registerAndReturnToken(accountTypeOnlyEmail);
+        jdbcTemplate.update("update users set account_type = 'PREMIUM' where email = ?", accountTypeOnlyEmail);
+
+        mockMvc.perform(get("/api/v1/lessons/lesson-places-1")
+                        .header("Authorization", "Bearer " + accountTypeOnlyToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("PREMIUM_REQUIRED"));
+
+        String activeSubscriptionToken = jwtService.generateToken("learner.premium@vsign.test", "USER");
+        mockMvc.perform(get("/api/v1/lessons/lesson-places-1")
+                        .header("Authorization", "Bearer " + activeSubscriptionToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lessonId").value("lesson-places-1"))
+                .andExpect(jsonPath("$.data.requiresPremium").value(true));
     }
 
     @Test
@@ -364,7 +445,8 @@ class LearningWorkflowIT {
 
     @Test
     void completesLessonAfterVideoQuizAndAiPass() throws Exception {
-        String token = registerAndReturnToken("completion-success@vsign.com");
+        String email = "completion-success@vsign.com";
+        String token = registerAndReturnToken(email);
 
         mockMvc.perform(put("/api/v1/lessons/lesson-greetings-1/progress")
                         .header("Authorization", "Bearer " + token)
@@ -424,6 +506,34 @@ class LearningWorkflowIT {
                 .andExpect(jsonPath("$.data.completionPct").value(100))
                 .andExpect(jsonPath("$.data.phase").value("DONE"))
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"));
+
+        mockMvc.perform(post("/api/v1/lessons/lesson-greetings-1/complete")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.completionPct").value(100))
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"));
+
+        Integer awardCount = jdbcTemplate.queryForObject(
+                """
+                        select count(*)
+                        from gamification_xp_awards award
+                        join gamification_profiles profile on profile.user_id = award.user_id
+                        where profile.email = ?
+                          and award.event_id = ?
+                          and award.source = ?
+                        """,
+                Integer.class,
+                email,
+                "lesson-complete:lesson-greetings-1",
+                "LESSON_COMPLETION"
+        );
+        Integer currentStreak = jdbcTemplate.queryForObject(
+                "select current_streak from gamification_profiles where email = ?",
+                Integer.class,
+                email
+        );
+        assertThat(awardCount).isEqualTo(1);
+        assertThat(currentStreak).isEqualTo(1);
     }
 
     @Test

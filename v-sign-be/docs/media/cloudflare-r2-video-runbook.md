@@ -292,6 +292,68 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\v-sign-be\scripts\media\ge
 
 Chạy SQL output trong Supabase SQL Editor.
 
+## Production CORS
+
+Only allow staging and production frontend origins to read videos. Do not add `localhost` to the production bucket CORS rule. If local development needs direct R2 video reads, use a separate dev bucket or temporary local-only rule.
+
+From the project root:
+
+```powershell
+cd D:\V-sign_EXE101_Project
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\v-sign-be\scripts\media\configure-r2-cors.ps1 `
+  -AccountId <CLOUDFLARE_ACCOUNT_ID> `
+  -BucketName vsign-learning-videos `
+  -AllowedOrigins https://vsign.vercel.app,https://staging-vsign.vercel.app `
+  -Profile r2
+```
+
+The script writes `v-sign-be\scripts\media\generated-r2-cors.json` and applies it with:
+
+```txt
+AllowedMethods: GET, HEAD
+AllowedHeaders: Range, If-None-Match, If-Modified-Since
+ExposeHeaders: Accept-Ranges, Content-Length, Content-Range, Content-Type, ETag, Cache-Control
+```
+
+## Cache headers
+
+`sync-videos-to-r2.ps1` uploads MP4 files with:
+
+```txt
+Cache-Control: public,max-age=31536000,immutable
+Content-Type: video/mp4
+```
+
+This is correct for versioned/static MP4 filenames. If a video changes, upload it under a new filename or versioned path instead of replacing the object behind the same URL.
+
+## Verify media URLs
+
+Verify generated SQL offline without HTTP calls:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\v-sign-be\scripts\media\verify-video-urls.ps1 `
+  -SqlPath .\v-sign-be\scripts\media\generated-video-url-backfill.sql `
+  -ListOnly
+```
+
+Verify a deployed backend API and fail on non-`200/206` responses or non-`video/mp4` content:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\v-sign-be\scripts\media\verify-video-urls.ps1 `
+  -ApiBaseUrl https://api.vsign.example.com `
+  -RequireCacheControl `
+  -ReportPath .\v-sign-be\scripts\media\video-url-check-report.csv
+```
+
+For local backend testing:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\v-sign-be\scripts\media\verify-video-urls.ps1 `
+  -ApiBaseUrl http://localhost:8080/V-sign `
+  -MaxUrls 20
+```
+
 ## Verify sau khi backfill
 
 Chạy backend:

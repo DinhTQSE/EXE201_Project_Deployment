@@ -1,10 +1,12 @@
 package com.vsign.backend.learning.service;
 
-import com.vsign.backend.auth.persistence.UserRepository;
+import com.vsign.backend.assessment.persistence.QuizEntity;
 import com.vsign.backend.assessment.persistence.QuizAttemptRepository;
+import com.vsign.backend.assessment.persistence.QuizRepository;
 import com.vsign.backend.common.exception.BusinessException;
 import com.vsign.backend.common.exception.ErrorCode;
 import com.vsign.backend.common.security.JwtService;
+import com.vsign.backend.gamification.service.GamificationService;
 import com.vsign.backend.learning.dto.ChapterListResponse;
 import com.vsign.backend.learning.dto.ChapterSummaryResponse;
 import com.vsign.backend.learning.dto.LessonDetailResponse;
@@ -38,11 +40,18 @@ import com.vsign.backend.monetization.persistence.UserSubscriptionRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
@@ -54,6 +63,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class LearningWorkflowService {
     private static final String ANONYMOUS_USER_KEY = "anonymous";
+    private static final int SIGNATURE_ATTEMPT_RATE_LIMIT = 12;
+    private static final Duration SIGNATURE_ATTEMPT_RATE_WINDOW = Duration.ofMinutes(1);
     private static final List<String> RAW_AI_PAYLOAD_MARKERS = List.of(
             "data:image",
             "base64",
@@ -72,8 +83,10 @@ public class LearningWorkflowService {
     private final LessonProgressRepository progressRepository;
     private final SignatureAttemptLogRepository signatureAttemptLogRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
-    private final UserRepository userRepository;
     private final QuizAttemptRepository quizAttemptRepository;
+    private final QuizRepository quizRepository;
+    private final GamificationService gamificationService;
+    private final ConcurrentMap<String, Deque<Instant>> signatureAttemptWindows = new ConcurrentHashMap<>();
 
     public LearningWorkflowService(
             PracticeItemRepository practiceItemRepository,
@@ -84,8 +97,9 @@ public class LearningWorkflowService {
             LessonProgressRepository progressRepository,
             SignatureAttemptLogRepository signatureAttemptLogRepository,
             UserSubscriptionRepository userSubscriptionRepository,
-            UserRepository userRepository,
-            QuizAttemptRepository quizAttemptRepository
+            QuizAttemptRepository quizAttemptRepository,
+            QuizRepository quizRepository,
+            GamificationService gamificationService
     ) {
         this.practiceItemRepository = practiceItemRepository;
         this.rubricRepository = rubricRepository;
@@ -95,8 +109,9 @@ public class LearningWorkflowService {
         this.progressRepository = progressRepository;
         this.signatureAttemptLogRepository = signatureAttemptLogRepository;
         this.userSubscriptionRepository = userSubscriptionRepository;
-        this.userRepository = userRepository;
         this.quizAttemptRepository = quizAttemptRepository;
+        this.quizRepository = quizRepository;
+        this.gamificationService = gamificationService;
     }
 
     public PracticeItemsPageResponse listPracticeItems(String category, String level, int page, int size) {
@@ -136,6 +151,8 @@ public class LearningWorkflowService {
     @Transactional
     public SignatureAttemptResponse submitSignatureAttempt(SubmitSignatureAttemptRequest request) {
         rejectRawAiPayload(request);
+        String userKey = requireAuthenticatedUser();
+        enforceSignatureAttemptRateLimit(userKey);
         PracticeItemEntity practiceItem = practiceItemRepository.findByPracticeItemIdAndPublishedTrue(request.practiceItemId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         String attemptId = "attempt-" + UUID.randomUUID();
@@ -152,7 +169,7 @@ public class LearningWorkflowService {
         List<String> feedbackCodes = feedbackCodes(request.aiStatus(), correct, request.confidence());
         signatureAttemptLogRepository.save(new SignatureAttemptLogEntity(
                 attemptId,
-                currentUserKey(),
+                userKey,
                 request.practiceItemId(),
                 request.userStoryId(),
                 request.documentUploadId(),
@@ -166,6 +183,8 @@ public class LearningWorkflowService {
                 request.framesProcessed(),
                 request.handsDetectedFrames(),
                 request.inferenceMs(),
+                cleanVersion(request.modelVersion()),
+                cleanVersion(request.labelVersion()),
                 status,
                 score,
                 String.join(",", feedbackCodes)
@@ -361,6 +380,10 @@ public class LearningWorkflowService {
 
         int lastPosition = Math.max(progress.getLastPositionSeconds(), lesson.getDurationSeconds());
         progress.update(100, lastPosition, "DONE", null, "COMPLETED");
+        int xpAward = quizRepository.findByLessonIdAndPublishedTrue(lessonId)
+                .map(QuizEntity::getXpAward)
+                .orElse(20);
+        gamificationService.awardLessonCompletion(userKey, lessonId, xpAward);
         return toProgressResponse(progressRepository.save(progress));
     }
 
@@ -449,16 +472,11 @@ public class LearningWorkflowService {
                 && ("ADMIN".equals(principal.role()) || "SUPER_ADMIN".equals(principal.role()))) {
             return true;
         }
-        boolean premiumSubscription = userSubscriptionRepository.findById(userKey)
+        return userSubscriptionRepository.findById(userKey)
                 .filter(subscription -> "ACTIVE".equals(subscription.getStatus()))
                 .filter(subscription -> subscription.getPlanType() != null && !subscription.getPlanType().isBlank())
+                .filter(subscription -> subscription.getExpiresAt() == null || subscription.getExpiresAt().isAfter(OffsetDateTime.now()))
                 .isPresent();
-        if (premiumSubscription) {
-            return true;
-        }
-        return userRepository.findByEmailIgnoreCase(userKey)
-                .map(user -> "PREMIUM".equals(user.getAccountType()))
-                .orElse(false);
     }
 
     private String normalize(String value) {
@@ -505,6 +523,29 @@ public class LearningWorkflowService {
             return List.of("SIGN_MISMATCH", "TRY_AGAIN_SLOWLY");
         }
         return List.of("HAND_SHAPE_MATCH", "MOVEMENT_PATH_ACCEPTABLE");
+    }
+
+    private void enforceSignatureAttemptRateLimit(String userKey) {
+        Instant now = Instant.now();
+        Instant cutoff = now.minus(SIGNATURE_ATTEMPT_RATE_WINDOW);
+        Deque<Instant> window = signatureAttemptWindows.computeIfAbsent(userKey, ignored -> new ArrayDeque<>());
+        synchronized (window) {
+            while (!window.isEmpty() && window.peekFirst().isBefore(cutoff)) {
+                window.removeFirst();
+            }
+            if (window.size() >= SIGNATURE_ATTEMPT_RATE_LIMIT) {
+                throw new BusinessException(ErrorCode.RATE_LIMITED, "Too many signature attempts; please wait before retrying");
+            }
+            window.addLast(now);
+        }
+    }
+
+    private String cleanVersion(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.length() > 120 ? trimmed.substring(0, 120) : trimmed;
     }
 
     private void rejectRawAiPayload(SubmitSignatureAttemptRequest request) {

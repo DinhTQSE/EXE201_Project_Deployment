@@ -12,6 +12,7 @@ public enum ErrorCode {
     PREMIUM_REQUIRED(HttpStatus.FORBIDDEN, "Premium account required"),
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email already exists"),
     ATTEMPT_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "Attempt already submitted"),
+    RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Too many requests"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "Resource not found"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User not found"),
     UNIT_NOT_FOUND(HttpStatus.NOT_FOUND, "Unit not found"),

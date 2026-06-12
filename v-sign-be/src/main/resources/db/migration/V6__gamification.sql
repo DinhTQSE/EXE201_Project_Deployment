@@ -28,13 +28,3 @@ create table gamification_xp_awards (
     created_at timestamp with time zone not null default now(),
     unique (user_id, event_id)
 );
-
-insert into gamification_profiles (email, user_id, full_name, total_xp, current_streak, longest_streak) values
-('learner.one@vsign.test', 'learner-001', 'Learner One', 320, 4, 7),
-('learner.two@vsign.test', 'learner-002', 'Learner Two', 280, 2, 3),
-('learner.three@vsign.test', 'learner-003', 'Learner Three', 150, 1, 1);
-
-insert into gamification_badges (user_id, badge_id, name, earned_at) values
-('learner-001', 'badge-first-lesson', 'Khoi Dau', '2026-05-01T00:00:00Z'),
-('learner-002', 'badge-first-lesson', 'Khoi Dau', '2026-05-01T00:00:00Z'),
-('learner-003', 'badge-first-lesson', 'Khoi Dau', '2026-05-01T00:00:00Z');

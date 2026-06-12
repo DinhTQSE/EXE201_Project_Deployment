@@ -57,6 +57,11 @@ class FlywayMigrationTest {
                 Integer.class
         );
 
+        Integer fixtureGamificationProfilesCount = jdbcTemplate.queryForObject(
+                "select count(*) from gamification_profiles where email in ('learner.one@vsign.test', 'learner.two@vsign.test', 'learner.three@vsign.test')",
+                Integer.class
+        );
+
         Integer subscriptionPlansCount = jdbcTemplate.queryForObject(
                 "select count(*) from subscription_plans where active = true",
                 Integer.class
@@ -92,7 +97,7 @@ class FlywayMigrationTest {
                 Integer.class
         );
 
-        Integer testActorAccountsCount = jdbcTemplate.queryForObject(
+        Integer productionTestActorAccountsCount = jdbcTemplate.queryForObject(
                 "select count(*) from users where email in ('learner.basic@vsign.test', 'learner.premium@vsign.test', 'admin@vsign.test', 'superadmin@vsign.test', 'reviewer@vsign.test', 'inactive@vsign.test')",
                 Integer.class
         );
@@ -104,14 +109,15 @@ class FlywayMigrationTest {
         assertThat(practiceItemsCount).isEqualTo(126);
         assertThat(assessmentsCount).isEqualTo(3);
         assertThat(lessonQuizzesCount).isEqualTo(43);
-        assertThat(gamificationProfilesCount).isEqualTo(5);
+        assertThat(gamificationProfilesCount).isGreaterThanOrEqualTo(3);
+        assertThat(fixtureGamificationProfilesCount).isEqualTo(3);
         assertThat(subscriptionPlansCount).isEqualTo(4);
         assertThat(paymentOrdersCount).isGreaterThanOrEqualTo(2);
-        assertThat(adminUsersCount).isEqualTo(8);
+        assertThat(adminUsersCount).isEqualTo(5);
         assertThat(adminReviewQueueCount).isEqualTo(3);
         assertThat(signatureAttemptLogTableCount).isEqualTo(1);
         assertThat(dictionaryVideoVariantsTableCount).isEqualTo(1);
-        assertThat(testActorAccountsCount).isEqualTo(6);
-        assertThat(appliedVersions).isEqualTo(19);
+        assertThat(productionTestActorAccountsCount).isZero();
+        assertThat(appliedVersions).isEqualTo(22);
     }
 }

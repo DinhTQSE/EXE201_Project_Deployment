@@ -8,6 +8,7 @@ Run:
 from __future__ import annotations
 
 import base64
+import asyncio
 import json
 import logging
 import os
@@ -40,8 +41,11 @@ MODEL_VERSION = os.getenv("VSIGN_AI_MODEL_VERSION", "branch-bilstm-attention-v2"
 LABEL_VERSION = os.getenv("VSIGN_AI_LABEL_VERSION", "mvp-3-units-20260609")
 MAX_LANDMARK_FRAMES = int(os.getenv("VSIGN_AI_MAX_LANDMARK_FRAMES", "120"))
 MAX_JSON_BODY_BYTES = int(os.getenv("VSIGN_AI_MAX_JSON_BODY_BYTES", str(512 * 1024)))
+PREDICT_TIMEOUT_SECONDS = float(os.getenv("VSIGN_AI_PREDICT_TIMEOUT_SECONDS", "10"))
+MAX_CONCURRENT_PREDICTIONS = max(1, int(os.getenv("VSIGN_AI_MAX_CONCURRENT_PREDICTIONS", "1")))
 ENABLE_LEGACY_FRAME_PREDICT = os.getenv("VSIGN_AI_ENABLE_LEGACY_FRAME_PREDICT", "true").lower() == "true"
 FORBIDDEN_RAW_FIELDS = {"frames", "frame", "image", "images", "video", "videos", "base64", "jpeg", "jpg", "png"}
+prediction_semaphore = asyncio.Semaphore(MAX_CONCURRENT_PREDICTIONS)
 
 
 class AppState:
@@ -214,6 +218,17 @@ def classify_landmark_sequence(sequence: list[list[float]], hands_detected_frame
     }
 
 
+async def classify_landmark_sequence_limited(sequence: list[list[float]], hands_detected_frames: int | None = None) -> dict:
+    try:
+        async with prediction_semaphore:
+            return await asyncio.wait_for(
+                asyncio.to_thread(classify_landmark_sequence, sequence, hands_detected_frames),
+                timeout=PREDICT_TIMEOUT_SECONDS,
+            )
+    except asyncio.TimeoutError as exc:
+        raise HTTPException(status_code=504, detail="AI prediction timed out") from exc
+
+
 def reject_raw_payload_fields(payload: dict[str, Any]) -> None:
     lowered_keys = {str(key).lower() for key in payload.keys()}
     forbidden = sorted(lowered_keys.intersection(FORBIDDEN_RAW_FIELDS))
@@ -335,6 +350,9 @@ def health_check():
         "num_classes": len(state.classes) if state.classes is not None else 0,
         "raw_feature_size": RAW_FEATURE_SIZE,
         "max_landmark_frames": MAX_LANDMARK_FRAMES,
+        "max_json_body_bytes": MAX_JSON_BODY_BYTES,
+        "predict_timeout_seconds": PREDICT_TIMEOUT_SECONDS,
+        "max_concurrent_predictions": MAX_CONCURRENT_PREDICTIONS,
     }
 
 
@@ -346,6 +364,8 @@ def version():
         "model_version": MODEL_VERSION,
         "label_version": LABEL_VERSION,
         "legacy_frame_predict_enabled": ENABLE_LEGACY_FRAME_PREDICT,
+        "predict_timeout_seconds": PREDICT_TIMEOUT_SECONDS,
+        "max_concurrent_predictions": MAX_CONCURRENT_PREDICTIONS,
     }
 
 
@@ -366,13 +386,13 @@ async def enforce_json_body_limit(request: Request, call_next):
 
 
 @app.post("/predict-landmarks", response_model=PredictResponse)
-def predict_landmarks(payload: dict[str, Any] = Body(...)):
+async def predict_landmarks(payload: dict[str, Any] = Body(...)):
     if state.model is None:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
 
     sequence, hands_detected_frames = validate_landmark_sequence(payload)
     started = time.perf_counter()
-    result = classify_landmark_sequence(sequence, hands_detected_frames)
+    result = await classify_landmark_sequence_limited(sequence, hands_detected_frames)
     result["inference_ms"] = round((time.perf_counter() - started) * 1000, 1)
 
     logger.info(

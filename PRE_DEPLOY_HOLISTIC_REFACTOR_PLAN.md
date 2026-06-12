@@ -12,13 +12,21 @@ Decision locked by product/architecture:
 - Frontend must not send raw webcam images, video files, or base64 frames to backend/AI service.
 - AI service should receive only the current model's Holistic landmark sequence/features and return prediction metadata.
 - Backend stores only prediction metadata: target sign, predicted sign, confidence, correctness, model version, status, timing.
+- Server deployment contains backend + AI on one Docker host. Backend and AI communicate through Docker Network.
+- Frontend deploys separately on Vercel and calls the backend API only; AI must not be exposed publicly.
+
+Current repository layout:
+- Server repository root: `D:\V-sign_EXE101_Project`
+- Backend: `v-sign-be`
+- AI service: `v-sign-be-ai`
+- Frontend repository/directory: `D:\v-sign-fe`
 
 Current source review result:
-- AI service currently accepts `POST /predict` with base64 JPEG frames, then runs Python MediaPipe Holistic server-side.
+- AI service has production `POST /predict-landmarks` for `[N,258]` landmark sequences and keeps legacy `POST /predict` only as a disabled-in-prod fallback.
 - Current trained model input is `RAW_FEATURE_SIZE=258` per frame, then resampled to 60 frames and velocity is appended.
 - Current model uses pose + left hand + right hand only. It does not use face landmarks.
-- FE currently captures canvas JPEG frames in `src/services/aiRecognition.ts` and posts `{ frames }` to AI service.
-- FE lesson flow currently has `video -> quiz -> ai-practice -> done`, but BE completion is still a generic progress update and does not verify quiz + AI pass.
+- FE source now lives outside this server repository at `D:\v-sign-fe`; FE changes must be made there.
+- FE lesson flow uses `video -> quiz -> ai-practice -> done`; BE now has a verified lesson completion endpoint and blocks generic progress completion.
 - Payment/premium production work is deferred for this refactor cycle per latest direction.
 
 ---
@@ -96,30 +104,30 @@ Priority order:
 
 ### Tasks
 
-- [ ] **BASE-01:** Record current AI request payload size for one prediction attempt.
+- [x] **BASE-01:** Record current AI request payload size for one prediction attempt.
 - [ ] **BASE-02:** Record current AI latency p50/p95 with 20-50 prediction requests.
 - [ ] **BASE-03:** Record AI service RAM idle/peak and backend RAM idle/peak.
-- [ ] **BASE-04:** Confirm exact current AI model input contract: frame images, landmarks, feature vector, sequence length, labels.
-- [ ] **BASE-05:** Confirm current trained MVP labels for 3 units: family, emotions, daily foods.
-- [ ] **BASE-06:** Run static search for prod-visible mock/demo/test text.
-- [ ] **BASE-07:** Create or update `docs/ops/baseline-cost-performance.md`.
+- [x] **BASE-04:** Confirm exact current AI model input contract: frame images, landmarks, feature vector, sequence length, labels.
+- [x] **BASE-05:** Confirm current trained MVP labels for 3 units: family, emotions, daily foods.
+- [x] **BASE-06:** Run static search for prod-visible mock/demo/test text.
+- [x] **BASE-07:** Create or update `docs/ops/baseline-cost-performance.md`.
 
 ### Acceptance
 
-- [ ] Baseline metrics exist before refactor.
-- [ ] We know whether current AI model can accept Holistic landmarks directly or needs an adapter/export.
-- [ ] Known mocks/security gaps are listed before implementation.
+- [ ] Runtime latency/RAM metrics exist before first server smoke deploy.
+- [x] We know whether current AI model can accept Holistic landmarks directly or needs an adapter/export.
+- [x] Known mocks/security gaps are listed before implementation.
 
 ---
 
 ## 4. Phase 1 - Client-Side MediaPipe Holistic Full Body
 
 Current source state:
-- `V-Sign-AI-Build/v-sign-be-ai/api_server.py` owns MediaPipe Holistic extraction server-side.
+- `v-sign-be-ai/api_server.py` owns MediaPipe Holistic extraction server-side.
 - `extract_landmarks_from_frame()` produces pose 132 + left 63 + right 63.
 - `normalize_landmarks()` uses pose landmark 0/nose as origin.
 - `model_v2.py` validates `RAW_FEATURE_SIZE=258`, resamples to 60 frames, appends velocity, and classifies with branch BiLSTM attention.
-- `v-sign-fe/src/services/aiRecognition.ts` still captures JPEG frames and posts to `/predict`.
+- Frontend AI recognition code lives in `D:\v-sign-fe` and should call backend API in production, not the AI container directly.
 
 ### FE Tasks
 
@@ -134,8 +142,8 @@ Current source state:
 - [x] **AI-FE-09:** Stop webcam tracks and Holistic processing immediately when leaving AI step.
 - [x] **AI-FE-10:** Replace current base64-frame request path with landmark-sequence request path.
 - [x] **AI-FE-11:** Add a network guard/test to ensure AI requests do not contain `data:image`, `base64`, `jpeg`, or raw frame arrays.
-- [ ] **AI-FE-12:** Add unsupported-browser state for devices that cannot run MediaPipe Holistic.
-- [ ] **AI-FE-13:** Keep camera preview local only; never upload preview frames.
+- [x] **AI-FE-12:** Add unsupported-browser state for devices that cannot run MediaPipe Holistic.
+- [x] **AI-FE-13:** Keep camera preview local only; never upload preview frames.
 
 ### AI Service Tasks
 
@@ -143,7 +151,7 @@ Current source state:
 - [x] **AI-SVC-02:** Validate request shape: `sequence.length >= 5`, every frame has exactly 258 numeric values, finite numeric bounds, optional target label.
 - [x] **AI-SVC-03:** Reject payloads that contain raw frames/base64 fields.
 - [x] **AI-SVC-04:** Add model version and label set version to prediction response.
-- [ ] **AI-SVC-05:** Add request timeout, concurrency limit, and payload size limit.
+- [x] **AI-SVC-05:** Add request timeout, concurrency limit, and payload size limit.
 - [x] **AI-SVC-06:** Ensure logs contain only metadata, never raw landmarks if logs become too large/sensitive.
 - [x] **AI-SVC-07:** Reuse existing `prepare_sequence()` and model forward path for `/predict-landmarks`.
 - [x] **AI-SVC-08:** Keep old `/predict` only as temporary dev fallback, disabled in production.
@@ -151,16 +159,16 @@ Current source state:
 ### BE Tasks
 
 - [x] **AI-BE-01:** Validate prediction metadata before storing attempt log.
-- [ ] **AI-BE-02:** Store model version/label version if columns already exist; otherwise add a small migration.
+- [x] **AI-BE-02:** Store model version/label version if columns already exist; otherwise add a small migration.
 - [x] **AI-BE-03:** Do not accept raw frame/video fields in any backend AI attempt endpoint.
-- [ ] **AI-BE-04:** Rate-limit AI attempt metadata logging per user/session.
+- [x] **AI-BE-04:** Rate-limit AI attempt metadata logging per user/session.
 
 ### Acceptance
 
 - [ ] Browser DevTools Network shows only landmark/features sent to AI.
-- [ ] No raw webcam image/video/base64 leaves frontend.
-- [ ] MediaPipe Holistic remains the extraction mechanism.
-- [ ] Prediction payload is exactly `[N, 258]` before server-side resampling/velocity.
+- [x] No raw webcam image/video/base64 leaves frontend.
+- [x] MediaPipe Holistic remains the extraction mechanism.
+- [x] Prediction payload is exactly `[N, 258]` before server-side resampling/velocity.
 - [ ] AI success/wrong/low-confidence/service-offline states still work.
 - [ ] MVP 3 AI units can complete the full learning flow.
 
@@ -198,13 +206,13 @@ Required lesson flow after review:
 
 ### Implementation Tasks After Review
 
-- [ ] **LEARN-FE-01:** Keep existing modal/step structure if possible; refactor internals instead of rebuilding the page.
+- [x] **LEARN-FE-01:** Keep existing modal/step structure if possible; refactor internals instead of rebuilding the page.
 - [x] **LEARN-FE-02:** Remove or dev-gate `DynamicQuizPanel`; production completion must not depend on local-generated quiz.
-- [ ] **LEARN-FE-03:** Use backend quiz options with real dictionary/R2 video URLs.
-- [ ] **LEARN-FE-04:** Ensure each lesson includes both quiz modes: text -> video and video -> text.
-- [ ] **LEARN-FE-05:** Wrong quiz choices block progression until retry/pass.
-- [ ] **LEARN-FE-06:** AI step is required for trained MVP labels.
-- [ ] **LEARN-FE-07:** AI bypass is visible only if BE returns `aiSupported=false` for that lesson.
+- [x] **LEARN-FE-03:** Use backend quiz options with real dictionary/R2 video URLs.
+- [x] **LEARN-FE-04:** Ensure each lesson includes both quiz modes: text -> video and video -> text.
+- [x] **LEARN-FE-05:** Wrong quiz choices block progression until retry/pass.
+- [x] **LEARN-FE-06:** AI step is required for trained MVP labels.
+- [x] **LEARN-FE-07:** AI bypass is visible only if BE returns `aiSupported=false` for that lesson.
 - [x] **LEARN-FE-08:** Remove optimistic completion/XP/streak as the source of truth; hydrate from BE after completion.
 - [x] **LEARN-FE-09:** Replace final FE `updateProgress(... COMPLETED)` with `POST /api/v1/lessons/{lessonId}/complete`; local completion may update UI only after BE success.
 - [x] **LEARN-FE-10:** Send authenticated token when creating/submitting lesson quiz attempts so BE can bind quiz pass to the learner.
@@ -214,17 +222,17 @@ Required lesson flow after review:
 - [x] **LEARN-BE-03A:** Add `quiz_attempts.user_key` and indexes for verified completion lookup.
 - [x] **LEARN-BE-03B:** Reject client attempts to mark progress `COMPLETED` through the generic progress endpoint; completion must use the verified command.
 - [x] **LEARN-BE-03C:** Add integration tests for: no-auth completion, missing quiz/AI rejection, direct progress completion rejection, and successful quiz+AI completion.
-- [ ] **LEARN-BE-04:** XP award must be idempotent by user + lesson + event.
-- [ ] **LEARN-BE-05:** Streak calculation stays server-side UTC+7 and must not reset 7 -> 1 after same-day completion.
-- [ ] **LEARN-BE-06:** Premium locks are enforced server-side from active subscription.
+- [x] **LEARN-BE-04:** XP award must be idempotent by user + lesson + event.
+- [x] **LEARN-BE-05:** Streak calculation stays server-side UTC+7 and must not reset 7 -> 1 after same-day completion.
+- [x] **LEARN-BE-06:** Premium locks are enforced server-side from active subscription.
 
 ### Acceptance
 
-- [ ] Basic user cannot complete premium content by direct route.
-- [ ] Premium user sees premium lessons unlocked after login/subscription hydrate.
-- [ ] Streak remains correct for continuous learning days.
-- [ ] Lesson completion never happens before quiz + AI requirements are satisfied.
-- [ ] Current working UI structure is preserved unless source review proves a rewrite is lower risk.
+- [x] Basic user cannot complete premium content by direct route.
+- [x] Premium user sees premium lessons unlocked after login/subscription hydrate.
+- [x] Streak remains correct for continuous learning days.
+- [x] Lesson completion never happens before quiz + AI requirements are satisfied.
+- [x] Current working UI structure is preserved unless source review proves a rewrite is lower risk.
 
 ---
 
@@ -251,38 +259,38 @@ Current source state:
 
 ### Acceptance
 
-- [ ] Unauthenticated users cannot submit progress, quiz, AI attempt, payment order.
-- [ ] Premium cannot be activated by localStorage/email naming.
-- [ ] Swagger is not public in production unless protected.
+- [x] Unauthenticated users cannot submit progress, quiz, AI attempt, payment order.
+- [x] Premium cannot be activated by localStorage/email naming.
+- [x] Swagger is not public in production unless protected.
 
 ---
 
 ## 7. Phase 4 - Data And Mock Cleanup
 
 Current source state:
-- `V15__test_actor_accounts.sql` seeds test actors into normal migration flow.
-- `V3__dictionary_entries.sql` still seeds English/demo dictionary rows with `cdn.vsign.test`.
-- `V6__gamification.sql`, `V7__monetization.sql`, and `V8__admin_state.sql` still contain demo/test users, payments, review docs.
+- Production migrations no longer seed shared test actor accounts, demo payment orders, demo admin/review rows, or old English `cdn.vsign.test` dictionary entries.
+- Test-only fixtures live under `src/test/resources/db/testdata`.
 - `V17`, `V18`, and `V19` still contain `pub-*.r2.dev` media URLs; public R2 URLs are accepted for the current product deployment.
+- `V19` restarts dictionary IDs at `10000` before MVP imports and keeps regional variants explicit.
 - `LoginModal.tsx` no longer exposes demo local account copy.
 - `PremiumModal.tsx` still contains contract-ready payment copy.
 
 ### Tasks
 
-- [ ] **DATA-01:** Move test actor account seed out of production migration.
-- [ ] **DATA-02:** Remove shared test password accounts from production seed.
-- [ ] **DATA-03:** Remove demo payment/admin/review rows from production seed.
-- [ ] **DATA-04:** Remove old English demo dictionary entries if still visible.
-- [ ] **DATA-05:** Normalize dictionary ID sequence after bulk import.
+- [x] **DATA-01:** Move test actor account seed out of production migration.
+- [x] **DATA-02:** Remove shared test password accounts from production seed.
+- [x] **DATA-03:** Remove demo payment/admin/review rows from production seed.
+- [x] **DATA-04:** Remove old English demo dictionary entries if still visible.
+- [x] **DATA-05:** Normalize dictionary ID sequence after bulk import.
 - [x] **DATA-06:** Create script to scan DB/source for `vsign.test`, `pay.vsign.test`, `cdn.vsign.test`, and `localhost`. Public `r2.dev` media URLs are allowed for the current release.
-- [ ] **DATA-07:** Video mapping must be exact semantic match from label/source. If not exact, mark `NEEDS_VIDEO`; do not map to similar-but-wrong words.
-- [ ] **DATA-08:** Keep regional variants explicit: B, T, N, BT, NT, or national/default.
+- [x] **DATA-07:** Video mapping must be exact semantic match from label/source. If not exact, mark `NEEDS_VIDEO`; do not map to similar-but-wrong words.
+- [x] **DATA-08:** Keep regional variants explicit: B, T, N, BT, NT, or national/default.
 
 ### Acceptance
 
-- [ ] Production source has no user-visible mock/demo/test data.
-- [ ] Main 3 MVP units use correct videos and correct regional context.
-- [ ] Missing videos are explicit, not silently substituted.
+- [x] Production source has no user-visible mock/demo/test data.
+- [x] Main 3 MVP units use correct videos and correct regional context.
+- [x] Missing videos are explicit, not silently substituted.
 
 ---
 
@@ -327,42 +335,42 @@ Current source state:
 ### Tasks
 
 - [x] **MEDIA-01:** Accept public `pub-*.r2.dev` production media URLs for the current release; custom domain migration is deferred.
-- [ ] **MEDIA-02:** Configure R2 CORS only for staging/prod FE domains.
-- [ ] **MEDIA-03:** Set cache headers for versioned MP4 files.
-- [ ] **MEDIA-04:** Add script to verify every course/dictionary video URL returns 200 or 206 and `video/mp4`.
-- [ ] **MEDIA-05:** Add preload only for current lesson video, not entire course.
+- [x] **MEDIA-02:** Prepare R2 CORS config script/runbook for staging/prod FE domains only; actual bucket apply waits for Cloudflare account/bucket credentials.
+- [x] **MEDIA-03:** Set cache headers for versioned MP4 files through the R2 sync script.
+- [x] **MEDIA-04:** Add script to verify every course/dictionary video URL returns 200 or 206 and `video/mp4`.
+- [x] **MEDIA-05:** Add preload only for current lesson/active video, not entire course.
 
 ### Acceptance
 
 - [x] Course video load may use the public R2 media domain for the current release.
-- [ ] Slow or missing videos show a useful error state.
+- [x] Slow or missing videos show a useful error state.
 
 ---
 
 ## 10. Phase 7 - Frontend Performance And UX
 
 Current source state:
-- `v-sign-fe/package.json` does not currently include a MediaPipe web dependency.
-- AI camera code is currently bundled through normal route/component imports.
+- Frontend source lives outside this server repository at `D:\v-sign-fe`.
+- AI camera code is lazy-loaded through route/code-split chunks and only loads MediaPipe through dynamic import when AI practice runs.
 - `lovable-tagger` is present as a dev dependency and Vite plugin only in development mode.
-- Several UI strings are still mojibake/encoding-corrupted in source output.
-- Vite dev proxy maps `/ai` to localhost AI service; production env must override this.
+- Several older UI strings are still mojibake/encoding-corrupted in source output; this remains open for a dedicated copy/encoding cleanup pass.
+- Production frontend env points to the public backend API domain. FE AI prediction now calls backend `/api/v1/signature-workflows/predict-landmarks`, not `/ai`.
 
 ### Tasks
 
-- [ ] **FE-PERF-01:** Lazy-load Dictionary, Assessment, AI camera, Payment modal.
-- [ ] **FE-PERF-02:** Lazy-load MediaPipe Holistic only in AI practice.
-- [ ] **FE-PERF-03:** Add global error boundary.
+- [x] **FE-PERF-01:** Lazy-load Dictionary, Assessment, AI camera, Payment modal.
+- [x] **FE-PERF-02:** Lazy-load MediaPipe Holistic only in AI practice.
+- [x] **FE-PERF-03:** Add global error boundary.
 - [ ] **FE-PERF-04:** Fix all remaining encoding/mojibake UI strings.
-- [ ] **FE-PERF-05:** Use consistent loading skeleton/spinner, no blank page while API loads.
+- [x] **FE-PERF-05:** Use consistent loading skeleton/spinner, no blank page while API loads.
 - [ ] **FE-PERF-06:** Verify responsive layout on desktop/tablet/mobile.
-- [ ] **FE-PERF-07:** Production env must not reference localhost.
+- [x] **FE-PERF-07:** Production env must not reference localhost.
 
 ### Acceptance
 
-- [ ] `npm run build` passes.
-- [ ] Main routes do not blank-screen on API failure.
-- [ ] Initial bundle does not include Holistic unless AI route is used.
+- [x] `npm run build` passes.
+- [x] Main routes do not blank-screen on API failure.
+- [x] Initial bundle does not include Holistic unless AI route is used.
 
 ---
 
@@ -372,8 +380,9 @@ Current source state:
 - Backend has `application-prod.properties` in `src/main/resources`.
 - Backend prod profile disables SQL debug and Swagger/OpenAPI, and enables Flyway validation.
 - AI service has `requirements.txt` with heavy server-side packages: MediaPipe, OpenCV, Torch, matplotlib, pandas, scikit-learn.
-- Backend, frontend, and AI service have production Dockerfiles.
-- Production Compose runs backend, AI, and Caddy, with Caddy serving the frontend and reverse-proxying `/api/v1` and `/ai`.
+- Backend and AI service have production Dockerfiles in the server repository.
+- Production Compose runs backend, AI, and Caddy. Caddy reverse-proxies public `/api/v1` requests to backend only.
+- AI is private on Docker Network at `http://ai:8000`; backend calls it through `AI_SERVICE_BASE_URL`.
 - Production Compose pulls immutable GHCR image tags instead of building application images on the server.
 
 ### Tasks
@@ -383,10 +392,10 @@ Current source state:
 - [x] **OPS-03:** Add AI health and version endpoints.
 - [x] **OPS-04:** Add Dockerfiles and production Docker Compose.
 - [x] **OPS-05:** Add memory/CPU limits so AI cannot take backend down.
-- [x] **OPS-06:** Add Caddy reverse proxy body-size limits for `/api/v1` and `/ai`.
+- [x] **OPS-06:** Add Caddy reverse proxy body-size limits for public `/api/v1`; keep AI private behind backend.
 - [x] **OPS-07:** Add DB backup/restore runbook.
 - [x] **OPS-08:** Add deployment smoke test checklist.
-- [ ] **OPS-09:** Add production request-rate protection through Cloudflare/WAF or a Caddy rate-limit plugin if traffic/abuse requires it.
+- [x] **OPS-09:** Add production request-rate protection through Cloudflare/WAF or a Caddy rate-limit plugin if traffic/abuse requires it.
 
 Recommended low-cost JVM guardrail:
 
@@ -405,23 +414,25 @@ proxy: 0.25 CPU, 256 MB RAM
 ### Acceptance
 
 - [ ] Backend stays healthy when AI restarts.
-- [ ] AI endpoint has request body protection and a documented request-rate mitigation path.
-- [ ] Deploy can be rolled back with a known checklist.
+- [x] Public backend API has request body protection and a documented request-rate mitigation path.
+- [x] AI is reachable from backend over Docker Network but not reachable from the public internet.
+- [x] Deploy can be rolled back with a known checklist.
 
 ---
 
 ## 12. Phase 9 - GitHub Actions, GHCR, And Server Pull Deploy
 
 Current source state:
-- Root `.github/workflows/deploy.yml` runs tests, builds backend/AI/frontend images, pushes them to GHCR, then SSHes into the server.
+- Root `.github/workflows/deploy.yml` runs backend tests and an AI syntax check, builds backend/AI images, pushes them to GHCR, then SSHes into the server.
 - Root `docker-compose.prod.yml` uses `ghcr.io/${GHCR_OWNER}/vsign-*:${IMAGE_TAG}` images.
-- Root `Caddyfile` is the production reverse proxy config.
+- Root `Caddyfile` is the production API reverse proxy config.
 - `v-sign-be/docs/deployment/github-actions-ghcr-caddy-runbook.md` documents AWS bootstrap, GitHub secrets, first deploy, and rollback.
+- Frontend deploys independently on Vercel from `D:\v-sign-fe`.
 
 ### Tasks
 
-- [x] **CICD-01:** Use GHCR image naming for backend, AI, and frontend/Caddy images.
-- [x] **CICD-02:** Add GitHub Actions test/build workflow for backend, frontend, and AI.
+- [x] **CICD-01:** Use GHCR image naming for backend and AI images.
+- [x] **CICD-02:** Add GitHub Actions test/build workflow for backend and AI.
 - [x] **CICD-03:** Push immutable commit SHA tags and `latest` tags to GHCR.
 - [x] **CICD-04:** Add deploy job that SSHes into the server, uploads deploy files, pulls GHCR images, and runs Docker Compose.
 - [x] **CICD-05:** Ensure production Compose pulls images from GHCR and does not build application images on the server.
@@ -429,26 +440,28 @@ Current source state:
 - [ ] **CICD-07:** Provision AWS EC2 instance, security group, Docker, swap, DNS, and `/opt/vsign/.env.prod`.
 - [ ] **CICD-08:** Add GitHub repository secrets for the real server.
 - [ ] **CICD-09:** Run first server deploy and complete smoke test checklist.
+- [ ] **CICD-10:** Configure Vercel frontend env to call the backend API domain, not the AI service.
 
 ### Acceptance
 
-- [ ] A push to `main` can deploy backend, AI, and frontend to the server without manual build commands.
+- [ ] A push to `main` can deploy backend and AI to the server without manual build commands.
+- [ ] Frontend deploys through Vercel and calls the backend API domain.
 - [ ] The server only stores deploy config and env files; application code is not required on the server.
 - [ ] Rollback can select a previous GHCR `sha-*` tag.
-- [ ] Caddy serves HTTPS for the configured `APP_DOMAIN`.
+- [ ] Caddy serves HTTPS for the configured backend API `APP_DOMAIN`.
 
 ---
 
 ## 13. Cost Optimization Rules Specific To Holistic
 
-- [ ] Load Holistic only at AI step.
-- [ ] Run Holistic on client; server should not decode images or run MediaPipe for production path.
-- [ ] Send only the current 258-value pose/hand feature vector per frame; do not send face landmarks for the current model.
-- [ ] Use adaptive FPS: start 6-8 FPS, reduce on low-end devices.
-- [ ] Cap sequence length and duration.
+- [x] Load Holistic only at AI step.
+- [x] Run Holistic on client; server should not decode images or run MediaPipe for production path.
+- [x] Send only the current 258-value pose/hand feature vector per frame; do not send face landmarks for the current model.
+- [x] Use adaptive FPS: start 6-8 FPS, reduce on low-end devices.
+- [x] Cap sequence length and duration.
 - [ ] Quantize/round landmark values before sending if accuracy is stable.
-- [ ] Stop camera and animation loops on route change/modal close.
-- [ ] Do not continuously predict; predict only after user starts an attempt.
+- [x] Stop camera and animation loops on route change/modal close.
+- [x] Do not continuously predict; predict only after user starts an attempt.
 - [ ] Add cooldown between attempts.
 - [ ] Limit free-user AI attempts per day/session.
 - [ ] Keep a feature flag to disable AI if service is unavailable.
@@ -459,24 +472,24 @@ Current source state:
 
 ### Backend
 
-- [ ] `mvn test`
+- [x] `mvn test`
 - [ ] Flyway migrate on clean staging DB.
-- [ ] Auth: register/login/protected endpoint access.
-- [ ] Learning: stage validation, premium lock, completion idempotency.
-- [ ] Gamification: XP idempotency, streak UTC+7.
-- [ ] Payment: deferred in this refactor cycle; run existing tests only, do not implement real gateway now.
-- [ ] AI metadata: success, wrong sign, low confidence, unsupported, no raw data persisted.
+- [x] Auth: register/login/protected endpoint access.
+- [x] Learning: stage validation, premium lock, completion idempotency.
+- [x] Gamification: XP idempotency, streak UTC+7.
+- [x] Payment: deferred in this refactor cycle; run existing tests only, do not implement real gateway now.
+- [x] AI metadata: success, wrong sign, low confidence, unsupported, no raw data persisted.
 
 ### Frontend
 
-- [ ] `npm run lint`
-- [ ] `npm run build`
+- [x] `npm run lint`
+- [x] `npm run build`
 - [ ] Basic user: login -> free lesson -> quiz -> AI -> completion.
 - [ ] Premium user: login -> premium lesson unlocked.
 - [ ] Dictionary: search/filter/open video/missing video.
 - [ ] AI: camera allowed, camera blocked, service offline, low confidence, success.
-- [ ] Network assertion: no base64/image/video payload sent to AI/BE.
-- [ ] Learning flow assertion: no lesson can reach completion without backend quiz pass + AI pass.
+- [x] Network assertion: no base64/image/video payload sent to AI/BE.
+- [x] Learning flow assertion: no lesson can reach completion without backend quiz pass + AI pass.
 
 ### Media
 
@@ -497,19 +510,13 @@ Current source state:
 
 ## 16. Immediate Implementation Order
 
-Recommended next implementation sequence:
+Recommended next sequence after this pass:
 
-1. **LEARN-REVIEW-01 to LEARN-REVIEW-06:** Review current learning flow and confirm what to keep before editing.
-2. **AI-FE-01 to AI-FE-13:** Replace base64 frame upload with client-side Holistic 258-feature landmarks.
-3. **AI-SVC-01 to AI-SVC-08:** Add `/predict-landmarks` and enforce payload rules.
-4. **LEARN-FE-01 to LEARN-BE-06:** Lock correct lesson flow and streak/XP completion.
-5. **DATA-06 to DATA-08:** Verify MVP 3-unit videos and regional mapping.
-6. **SEC-BE-01 to SEC-FE-03:** Remove auth/security production blockers.
-7. **FE-PERF-01 to FE-PERF-05:** Lazy load AI/large routes and fix loading/encoding.
-8. **OPS-01 to OPS-09:** Prepare production runtime and smoke checks.
-9. **CICD-01 to CICD-09:** Prepare GitHub Actions, GHCR, Caddy, and AWS server pull-deploy automation.
-
-Do not start payment production integration until the learning + AI MVP path is stable, unless premium monetization is required for the first release.
+1. Start `AWS_C6I_DEPLOY_PLAN.md` when the AWS instance, DNS, GitHub secrets, and Vercel env are ready.
+2. Run first deploy through GitHub Actions; do not build backend/AI images manually on the server.
+3. Complete browser E2E smoke checks for login, free lesson, quiz, AI camera, completion, premium lock, dictionary video, and network payload inspection.
+4. Record runtime payload size, AI latency p50/p95, and backend/AI RAM from real containers.
+5. Keep Phase 5 payment gateway work deferred until the learning + AI MVP path is stable, unless monetization becomes required for first release.
 
 ---
 
@@ -531,5 +538,13 @@ Do not start payment production integration until the learning + AI MVP path is 
 - **2026-06-12 health/version endpoints:** Completed OPS-02 and OPS-03. Backend now exposes public `GET /api/v1/health` and `GET /api/v1/version`, with security allow-list coverage and integration test `HealthControllerIT`. AI service keeps `/health`, now includes API/model/label metadata, and adds `GET /version`. Verified with `mvn -q -Dtest=HealthControllerIT test`, `mvn -q -DskipTests compile`, and `python -m py_compile api_server.py`.
 - **2026-06-12 Docker deploy scaffold:** Completed OPS-04, OPS-05, and OPS-06. Added Dockerfiles for backend, frontend, and AI service, `.dockerignore` files, root `docker-compose.prod.yml` with CPU/memory limits, optional server-side `.env.prod`, and reverse proxy rules for `/api/v1` and `/ai`. The initial proxy scaffold was later replaced with Caddy and GHCR pull-deploy automation. Verified compose syntax with `docker compose -f docker-compose.prod.yml config`, plus `mvn -q -DskipTests compile`, `npm run build`, and `python -m py_compile api_server.py`.
 - **2026-06-12 deployment runbooks:** Completed OPS-07 and OPS-08 with `v-sign-be/docs/deployment/db-backup-restore-runbook.md` and `v-sign-be/docs/deployment/deployment-smoke-test-checklist.md`. The runbooks cover PostgreSQL backup/restore, rollback readiness, service health/version checks, auth, learning flow, AI landmark requests, media, monetization, and rollback records.
-- **2026-06-12 GitHub Actions + GHCR + Caddy deploy automation:** Added root `.github/workflows/deploy.yml` so push to `main` runs tests, builds backend/AI/frontend images, pushes them to GHCR, and deploys through SSH by pulling images on the server. Replaced the frontend proxy image with Caddy, added production `Caddyfile`, changed `docker-compose.prod.yml` to pull GHCR images, added deploy env examples, and documented AWS bootstrap/secrets/rollback in `github-actions-ghcr-caddy-runbook.md`. Server provisioning, real GitHub secrets, and first AWS smoke deploy remain pending.
+- **2026-06-12 GitHub Actions + GHCR + Caddy deploy automation:** Added root `.github/workflows/deploy.yml` so push to `main` runs tests, builds backend/AI images, pushes them to GHCR, and deploys through SSH by pulling images on the server. Added production `Caddyfile`, changed `docker-compose.prod.yml` to pull GHCR images, added deploy env examples, and documented AWS bootstrap/secrets/rollback in `github-actions-ghcr-caddy-runbook.md`. Frontend deploys separately through Vercel. Server provisioning, real GitHub secrets, and first AWS smoke deploy remain pending.
 - **2026-06-12 CI/CD validation:** Moved deploy entry files to root to match the intended GitHub repository structure: `docker-compose.prod.yml`, `Caddyfile`, `.env.deploy.example`, and `.env.ai.prod.example`. Verified Compose config with `docker compose --env-file .env.deploy.example -f docker-compose.prod.yml config`, backend targeted tests with `mvn.cmd -q "-Dtest=LearningWorkflowIT,SubscriptionControllerIT,HealthControllerIT" test`, FE test/build with `npm.cmd run test -- aiRecognition` and `npm.cmd run build`, and AI syntax with `python -m py_compile api_server.py`. FE build still emits the existing large chunk warning tracked under Phase 7.
+- **2026-06-12 repository split update:** Frontend was moved out of the server repository to `D:\v-sign-fe`. The server repository now deploys backend + AI only; frontend deploys separately on Vercel and calls the backend API domain. Backend and AI communicate through Docker Network, and AI is no longer exposed publicly through Caddy.
+- **2026-06-12 server-only CI/CD update:** Updated `.github/workflows/deploy.yml` to remove frontend install/test/build and frontend image publishing, changed AI paths to `v-sign-be-ai`, kept backend/AI GHCR image publishing, and kept SSH pull-deploy to the server. Updated Caddy/Compose/runbooks/smoke tests so Caddy proxies only `/api/v1` to backend and AI health/version checks run internally from the server.
+- **2026-06-12 git hygiene update:** Hardened root/backend/AI ignore rules for env files, local secrets, build output, Python virtualenvs, and nested local repositories. Removed the local AI virtualenv and `v-sign-be/docs/app-docs` gitlink from the root index with `git rm --cached` so they remain on disk but are not pushed.
+- **2026-06-12 Phase 6 media readiness:** Added `configure-r2-cors.ps1` for staging/prod-only R2 CORS, added `verify-video-urls.ps1` for SQL/API/text-file video URL verification, documented R2 CORS/cache/verify commands, and kept `sync-videos-to-r2.ps1` cache headers as the production MP4 cache path.
+- **2026-06-12 Phase 7 FE performance pass:** In `D:\v-sign-fe`, added route-level lazy loading, lazy AI camera/payment modal loading, global error boundary, shared `VideoPlayer` with loading/error/retry states, current-video preload behavior, production API localhost guard, and changed FE AI prediction to call backend `/api/v1/signature-workflows/predict-landmarks` with bearer token instead of public `/ai`. Verified with `npm.cmd run test -- aiRecognition` and `npm.cmd run build`; build output splits `mediapipe`, AI camera, payment, dictionary, assessment, charts, and vendor chunks without large-chunk warnings.
+- **2026-06-12 final predeploy closure before AWS plan:** Completed the remaining local Phase 1/2/4/8 checklist items: unsupported Holistic browser state, camera-local-only payload path, AI timeout/concurrency/body limits, model/label version persistence, signature attempt rate limit, XP idempotency, UTC+7 streak, active-subscription premium lock, production seed cleanup, exact MVP mapping cleanup for `Cháo sườn`, baseline ops doc, and Cloudflare/WAF rate-protection path. Remaining open items are runtime metrics, browser E2E/network inspection, staging/AWS/DNS/GitHub secrets/Vercel setup, and deferred payment gateway work.
+- **2026-06-12 final local verification:** Verified with `mvn.cmd -q test`, `mvn.cmd -q "-Dtest=LearningWorkflowIT,GamificationControllerIT,SubscriptionControllerIT,HealthControllerIT,FlywayMigrationTest" test`, `mvn.cmd -q "-Dtest=FlywayMigrationTest" test`, `python -m py_compile api_server.py`, `npm.cmd run lint`, `npm.cmd run test -- aiRecognition`, `npm.cmd run build`, `docker compose --env-file .env.deploy.example -f docker-compose.prod.yml config`, and `powershell -ExecutionPolicy Bypass -File v-sign-be\scripts\scan-predeploy-markers.ps1`. FE lint exits 0 with existing warnings only. Local Docker still prints an access warning for `C:\Users\trand\.docker\config.json`, but compose config exits 0.
+- **2026-06-12 database schema policy:** Local Supabase dev uses existing `v-sign_schema`, which contains the current dev data. Production must use a clean dedicated schema such as `vsign_prod`; do not use `public` and do not reuse `v-sign_schema` for production. Updated `.env.prod.example`, `v-sign-be/.env.prod.example`, `AWS_C6I_DEPLOY_PLAN.md`, and the GHCR/Caddy deploy runbook accordingly.

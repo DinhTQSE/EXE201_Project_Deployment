@@ -14,6 +14,7 @@ import com.vsign.backend.gamification.persistence.GamificationProfileRepository;
 import com.vsign.backend.gamification.persistence.GamificationXpAwardEntity;
 import com.vsign.backend.gamification.persistence.GamificationXpAwardRepository;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class GamificationService {
+    private static final ZoneId APP_ACTIVITY_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final String LESSON_COMPLETION_SOURCE = "LESSON_COMPLETION";
+
     private final GamificationProfileRepository profileRepository;
     private final GamificationBadgeRepository badgeRepository;
     private final GamificationXpAwardRepository xpAwardRepository;
@@ -89,7 +93,7 @@ public class GamificationService {
                     true
             );
         }
-        LocalDate activityDate = request.activityDate() == null ? LocalDate.now() : request.activityDate();
+        LocalDate activityDate = request.activityDate() == null ? LocalDate.now(APP_ACTIVITY_ZONE) : request.activityDate();
         xpAwardRepository.save(new GamificationXpAwardEntity(
                 profile.getUserId(),
                 request.eventId(),
@@ -109,6 +113,16 @@ public class GamificationService {
                 profile.getLongestStreak(),
                 false
         );
+    }
+
+    @Transactional
+    public XpAwardResponse awardLessonCompletion(String email, String lessonId, int xpDelta) {
+        return awardXp(email, new XpAwardRequest(
+                "lesson-complete:" + lessonId,
+                LESSON_COMPLETION_SOURCE,
+                Math.max(1, xpDelta),
+                LocalDate.now(APP_ACTIVITY_ZONE)
+        ));
     }
 
     private GamificationProfileEntity profileFor(String email) {

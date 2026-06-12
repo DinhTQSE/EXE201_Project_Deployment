@@ -16,3 +16,5 @@ target
 *.pfx
 *.jks
 *.keystore
+
+docs/app-docs/

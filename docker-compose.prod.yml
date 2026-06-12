@@ -7,6 +7,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       JAVA_TOOL_OPTIONS: "-Xms256m -Xmx768m -XX:+UseContainerSupport"
+      AI_SERVICE_BASE_URL: http://ai:8000
     expose:
       - "8080"
     healthcheck:
@@ -47,13 +48,11 @@ services:
     restart: unless-stopped
 
   caddy:
-    image: ghcr.io/${GHCR_OWNER:-owner}/vsign-frontend:${IMAGE_TAG:-latest}
+    image: caddy:2-alpine
     environment:
       APP_DOMAIN: ${APP_DOMAIN:-localhost}
     depends_on:
       backend:
-        condition: service_healthy
-      ai:
         condition: service_healthy
     ports:
       - "80:80"

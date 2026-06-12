@@ -203,7 +203,7 @@ begin
             updated_at = now()
         from lesson_videos v
         where l.lesson_id = v.lesson_id
-          and (l.video_url is null or l.video_url = '' or l.video_url like 'https://cdn.vsign.test/%');
+          and (l.video_url is null or l.video_url = '');
     end if;
 end
 $$;

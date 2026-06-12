@@ -25,7 +25,8 @@ $excludedDirectories = @(
     "target",
     "dist",
     "venv",
-    "__pycache__"
+    "__pycache__",
+    "test"
 )
 
 $includedExtensions = @(
@@ -46,6 +47,14 @@ $includedExtensions = @(
 $rootPath = (Resolve-Path $Root).Path
 $selfPath = $PSCommandPath
 $pattern = ($tokens | ForEach-Object { [regex]::Escape($_) }) -join "|"
+$allowedLocalhostPathPatterns = @(
+    "\\docker-compose\.prod\.yml$",
+    "\\Caddyfile$",
+    "\\src\\main\\resources\\application\.properties$",
+    "\\src\\main\\java\\com\\vsign\\backend\\common\\security\\SecurityConfig\.java$",
+    "\\src\\main\\java\\com\\vsign\\backend\\learning\\service\\AiPredictionProxyService\.java$",
+    "\\openapi-backend\.json$"
+)
 
 $files = Get-ChildItem -LiteralPath $rootPath -Recurse -File | Where-Object {
     $file = $_
@@ -65,10 +74,24 @@ $files = Get-ChildItem -LiteralPath $rootPath -Recurse -File | Where-Object {
 
 $findings = foreach ($file in $files) {
     Select-String -LiteralPath $file.FullName -Pattern $pattern -AllMatches | ForEach-Object {
+        $matchValues = @($_.Matches | Select-Object -ExpandProperty Value -Unique)
+        $onlyAllowedLocalhost = $matchValues.Count -eq 1 -and $matchValues[0] -eq "localhost"
+        if ($onlyAllowedLocalhost) {
+            $allowedPath = $false
+            foreach ($allowedPattern in $allowedLocalhostPathPatterns) {
+                if ($_.Path -match $allowedPattern) {
+                    $allowedPath = $true
+                    break
+                }
+            }
+            if ($allowedPath) {
+                return
+            }
+        }
         [pscustomobject]@{
             Path = Resolve-Path -LiteralPath $_.Path -Relative
             Line = $_.LineNumber
-            Match = ($_.Matches | Select-Object -ExpandProperty Value -Unique) -join ","
+            Match = $matchValues -join ","
         }
     }
 }

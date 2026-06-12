@@ -29,19 +29,3 @@ create table admin_audit_logs (
     reason text,
     created_at timestamp with time zone not null default now()
 );
-
-insert into admin_user_accounts
-(id, email, display_name, role, status, account_type, created_at)
-values
-('usr-1001', 'learner.one@vsign.test', 'Learner One', 'USER', 'ACTIVE', 'FREE', '2026-05-01T08:00:00+07:00'),
-('usr-1002', 'learner.two@vsign.test', 'Learner Two', 'USER', 'ACTIVE', 'PREMIUM', '2026-05-03T08:00:00+07:00'),
-('usr-9001', 'admin@vsign.test', 'V-Sign Admin', 'ADMIN', 'ACTIVE', 'STAFF', '2026-04-20T08:00:00+07:00'),
-('usr-9002', 'reviewer@vsign.test', 'Content Reviewer', 'CONTENT_REVIEWER', 'ACTIVE', 'STAFF', '2026-04-22T08:00:00+07:00'),
-('usr-1003', 'inactive@vsign.test', 'Inactive Learner', 'USER', 'SUSPENDED', 'FREE', '2026-04-25T08:00:00+07:00');
-
-insert into admin_review_queue
-(content_id, title, content_type, submitted_by, status, submitted_at, reviewed_by, reviewed_at, reason)
-values
-('doc-2001', 'Bai hoc chu cai A', 'LESSON', 'content@vsign.test', 'PENDING', '2026-05-12T09:00:00+07:00', null, null, null),
-('doc-2002', 'Tu dien: Cam on', 'DICTIONARY_ENTRY', 'content@vsign.test', 'PENDING', '2026-05-13T09:00:00+07:00', null, null, null),
-('doc-2003', 'Quiz unit 1', 'ASSESSMENT', 'content@vsign.test', 'PENDING', '2026-05-14T09:00:00+07:00', null, null, null);

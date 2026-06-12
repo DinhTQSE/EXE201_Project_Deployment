@@ -55,3 +55,6 @@ logs
 
 # Nested repository metadata when this folder is pushed as one monorepo
 **/.git/
+
+# Local nested documentation export/repository
+v-sign-be/docs/app-docs/

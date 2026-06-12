@@ -54,6 +54,12 @@ public class SignatureAttemptLogEntity {
     @Column(name = "inference_ms")
     private Double inferenceMs;
 
+    @Column(name = "model_version")
+    private String modelVersion;
+
+    @Column(name = "label_version")
+    private String labelVersion;
+
     private String status;
     private int score;
 
@@ -82,6 +88,8 @@ public class SignatureAttemptLogEntity {
             Integer framesProcessed,
             Integer handsDetectedFrames,
             Double inferenceMs,
+            String modelVersion,
+            String labelVersion,
             String status,
             int score,
             String feedbackCodes
@@ -101,6 +109,8 @@ public class SignatureAttemptLogEntity {
         this.framesProcessed = framesProcessed;
         this.handsDetectedFrames = handsDetectedFrames;
         this.inferenceMs = inferenceMs;
+        this.modelVersion = modelVersion;
+        this.labelVersion = labelVersion;
         this.status = status;
         this.score = score;
         this.feedbackCodes = feedbackCodes;

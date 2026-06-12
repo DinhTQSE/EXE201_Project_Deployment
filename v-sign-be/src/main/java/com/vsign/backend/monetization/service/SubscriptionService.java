@@ -17,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,15 +29,18 @@ public class SubscriptionService {
     private final SubscriptionPlanRepository planRepository;
     private final CheckoutIntentRepository checkoutIntentRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    private final String paymentPublicBaseUrl;
 
     public SubscriptionService(
             SubscriptionPlanRepository planRepository,
             CheckoutIntentRepository checkoutIntentRepository,
-            UserSubscriptionRepository userSubscriptionRepository
+            UserSubscriptionRepository userSubscriptionRepository,
+            @Value("${app.payment.public-base-url:https://payments.example.invalid}") String paymentPublicBaseUrl
     ) {
         this.planRepository = planRepository;
         this.checkoutIntentRepository = checkoutIntentRepository;
         this.userSubscriptionRepository = userSubscriptionRepository;
+        this.paymentPublicBaseUrl = cleanBaseUrl(paymentPublicBaseUrl);
     }
 
     public List<SubscriptionPlanResponse> legacyPlans() {
@@ -81,7 +85,7 @@ public class SubscriptionService {
     public CheckoutIntentResponse createCheckout(CheckoutIntentRequest request, String userEmail) {
         SubscriptionPlanEntity plan = requirePlanEntity(request.planId());
         String checkoutId = "checkout-" + UUID.randomUUID();
-        String checkoutUrl = "https://pay.vsign.test/checkout/" + plan.getPlanId();
+        String checkoutUrl = paymentPublicBaseUrl + "/checkout/" + plan.getPlanId();
         CheckoutIntentEntity checkout = checkoutIntentRepository.save(new CheckoutIntentEntity(
                 checkoutId,
                 request.planId(),
@@ -136,5 +140,10 @@ public class SubscriptionService {
                 plan.getDurationDays(),
                 plan.isActive()
         );
+    }
+
+    private String cleanBaseUrl(String value) {
+        String baseUrl = value == null || value.isBlank() ? "https://payments.example.invalid" : value.trim();
+        return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
     }
 }

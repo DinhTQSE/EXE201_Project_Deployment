@@ -36,6 +36,9 @@ public record SubmitSignatureAttemptRequest(
         Integer handsDetectedFrames,
 
         @DecimalMin("0.0")
-        Double inferenceMs
+        Double inferenceMs,
+
+        String modelVersion,
+        String labelVersion
 ) {
 }

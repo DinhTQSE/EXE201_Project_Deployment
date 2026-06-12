@@ -77,6 +77,23 @@ class GamificationControllerIT {
     }
 
     @Test
+    void awardXpKeepsSameDayStreakInsteadOfResetting() throws Exception {
+        mockMvc.perform(post("/api/v1/gamification/xp-awards")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("learner.two@vsign.test", "USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "eventId": "same-day-lesson-evt-1001",
+                                  "source": "LESSON_COMPLETE",
+                                  "xpDelta": 20
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.currentStreak").value(2))
+                .andExpect(jsonPath("$.data.longestStreak").value(3));
+    }
+
+    @Test
     void awardXpRejectsInvalidDelta() throws Exception {
         mockMvc.perform(post("/api/v1/gamification/xp-awards")
                         .header(HttpHeaders.AUTHORIZATION, bearer("learner.one@vsign.test", "USER"))

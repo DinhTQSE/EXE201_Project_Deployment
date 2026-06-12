@@ -11,6 +11,7 @@ import com.vsign.backend.monetization.persistence.SubscriptionPlanEntity;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +20,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentService {
     private final SubscriptionService subscriptionService;
     private final PaymentOrderRepository paymentOrderRepository;
+    private final String paymentPublicBaseUrl;
 
-    public PaymentService(SubscriptionService subscriptionService, PaymentOrderRepository paymentOrderRepository) {
+    public PaymentService(
+            SubscriptionService subscriptionService,
+            PaymentOrderRepository paymentOrderRepository,
+            @Value("${app.payment.public-base-url:https://payments.example.invalid}") String paymentPublicBaseUrl
+    ) {
         this.subscriptionService = subscriptionService;
         this.paymentOrderRepository = paymentOrderRepository;
+        this.paymentPublicBaseUrl = cleanBaseUrl(paymentPublicBaseUrl);
     }
 
     @Transactional
@@ -46,7 +53,7 @@ public class PaymentService {
                 "VSIGN|" + request.provider() + "|" + plan.getPlanType() + "|" + transactionId + "|" + amount,
                 request.provider().toLowerCase() + "://payment/" + transactionId,
                 expiresAt,
-                "https://pay.vsign.test/qr/" + transactionId,
+                paymentPublicBaseUrl + "/qr/" + transactionId,
                 300,
                 true,
                 userEmail
@@ -96,5 +103,10 @@ public class PaymentService {
                 order.getCreatedAt().toString(),
                 order.isRetryable()
         );
+    }
+
+    private String cleanBaseUrl(String value) {
+        String baseUrl = value == null || value.isBlank() ? "https://payments.example.invalid" : value.trim();
+        return baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
     }
 }
