@@ -137,6 +137,14 @@ Backend API domain = api.<your-domain> or <elastic-ip-with-dashes>.sslip.io
 Production DB schema = vsign_prod
 ```
 
+Current deployment values:
+
+```text
+Elastic IP = 18.136.251.56
+Backend API domain = apivsignvn.social
+Backend API base URL = https://apivsignvn.social/api/v1
+```
+
 ---
 
 ## 4. Local Repository Check Before Push

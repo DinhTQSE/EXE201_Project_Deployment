@@ -10,6 +10,7 @@ Scope:
 - Password reset by email.
 - Admin dashboard visible only to admin accounts.
 - Basic admin operations: list/edit/delete users, system metrics, user usage and activity time.
+- Premium entitlement gates for lessons and AI Recognition after PayOS is production-ready.
 
 ---
 
@@ -150,6 +151,10 @@ Recommended for this project: backend OAuth redirect flow, because it matches th
 - [ ] PayOS return URL is only a UX signal; it must never activate premium by itself.
 - [ ] If PayOS payment succeeds but webhook/subscription update fails, the system must recover through reconciliation without requiring the user to pay again.
 - [ ] Payment status may stay `PENDING_CONFIRMATION` while backend verifies PayOS state and applies subscription.
+- [ ] Do not enforce strict lesson/AI paywalls until PayOS checkout, webhook, reconciliation, and frontend pending states are complete.
+- [ ] After PayOS is complete, free users get a limited learning/AI experience and paid users unlock the full lesson catalog and AI Recognition flow.
+- [ ] Lesson and AI access must be decided by backend subscription/entitlement state, not frontend local state.
+- [ ] Exact free limits should be configurable, not hardcoded in scattered frontend components.
 - [ ] Google login creates new users as `USER` only.
 - [ ] Google login may preserve existing `ADMIN`/`SUPER_ADMIN` role only when the verified Google email matches an existing admin user.
 - [ ] Do not grant admin by Google email domain, frontend flag, localStorage, or query param.
@@ -248,6 +253,22 @@ Usage/admin metrics:
   - `quiz_attempts`
   - `last_seen_at`
 - [ ] Ensure `admin_audit_logs` continues to record admin edits/deletes/payment overrides.
+
+Entitlement/quota enforcement:
+- [ ] Add entitlement/quota storage if existing subscription tables cannot express free limits cleanly:
+  - `feature_key`
+  - `account_type`
+  - `limit_type`
+  - `limit_value`
+  - `period`
+  - `enabled`
+- [ ] Add user daily feature usage if `user_usage_daily` is not enough for quota checks:
+  - `user_email`
+  - `feature_key`
+  - `usage_date`
+  - `used_count`
+  - `last_used_at`
+- [ ] Add indexes for entitlement lookup by `account_type, feature_key` and usage lookup by `user_email, feature_key, usage_date`.
 
 Password reset:
 - [ ] Add `password_reset_tokens` table:
@@ -650,7 +671,90 @@ Acceptance:
 
 ---
 
-## 11. Phase 7 - Frontend Google Login
+## 11. Phase 6A - Lesson And AI Recognition Entitlement Gates
+
+Timing:
+- This phase starts only after Phase 2 and Phase 6 are complete enough that a user can pay through PayOS, return to FE, and have subscription activation recovered through webhook or reconciliation.
+- Do not ship lesson/AI restrictions before payment recovery is reliable, otherwise free users can be blocked without a working upgrade path.
+
+Current state:
+- Lessons inside units are currently free for non-paying users.
+- AI Recognition can currently be reached by normal users once authenticated.
+- This is acceptable before PayOS is complete, but it must be changed before the paid production release.
+
+Recommended product rules for v1:
+- Free users can access a limited preview of each unit, for example the first lesson or first chapter.
+- Free users can see locked lesson cards with clear Premium CTA, not hidden content.
+- Free users can use AI Recognition only as a small preview quota, for example a limited number of attempts per day or only on allowed preview lessons.
+- Paid users with an active subscription can access all lessons and normal AI Recognition usage.
+- Even paid users may still have abuse-protection limits, but these are operational limits, not subscription locks.
+
+Backend rules:
+- [ ] Create a central `EntitlementService` or equivalent backend policy layer.
+- [ ] Backend decides whether the authenticated user can:
+  - view lesson detail
+  - stream/open lesson video metadata
+  - start quiz attempt
+  - submit quiz attempt
+  - start AI Recognition attempt
+  - submit AI Recognition result
+  - mark lesson complete
+- [ ] Use backend subscription truth from `/me/subscription`, not FE state.
+- [ ] Treat `PENDING_CONFIRMATION` and `PAID_SUBSCRIPTION_PENDING` carefully:
+  - do not grant full premium until verified subscription is active
+  - show recovery/pending state instead of asking the user to pay again
+- [ ] Return structured access errors:
+  - `PREMIUM_REQUIRED`
+  - `FREE_LIMIT_REACHED`
+  - `PAYMENT_PENDING_CONFIRMATION`
+  - `SUBSCRIPTION_RECOVERY_PENDING`
+- [ ] Include enough metadata for FE to render unlock CTA:
+  - `featureKey`
+  - `requiredPlan`
+  - `currentUsage`
+  - `limit`
+  - `resetAt` when quota-based
+- [ ] Ensure lesson completion remains backend-verified and cannot be bypassed by direct API calls.
+- [ ] Ensure AI Recognition endpoint rejects free users after quota/preview is exhausted.
+- [ ] Record AI attempt usage only when an attempt is actually accepted for processing.
+- [ ] Add admin/support visibility for users blocked by pending payment recovery.
+
+Frontend rules:
+- [ ] Read subscription and entitlement metadata from backend.
+- [ ] Course cards/lesson cards should show locked state for premium-only content.
+- [ ] Free users should see a clear Premium CTA on locked lessons.
+- [ ] AI Recognition page should show remaining free attempts or locked state.
+- [ ] If user has paid but subscription is still pending, show payment recovery state and "Recheck payment", not a generic lock.
+- [ ] Remove any frontend-only premium unlock behavior.
+- [ ] Do not rely on localStorage/accountType alone for unlocking lessons or AI.
+
+Admin rules:
+- [ ] Admin dashboard should show subscription/account type.
+- [ ] Admin user detail should show AI attempts and lesson access usage.
+- [ ] Admin payment view should highlight users who paid but are still blocked because subscription recovery is pending.
+- [ ] Manual premium activation remains exceptional and audited.
+
+Tests:
+- [ ] Free user can access configured free preview lessons.
+- [ ] Free user cannot access premium lesson detail by direct URL/API after limit.
+- [ ] Free user cannot submit premium quiz/lesson completion by direct API call.
+- [ ] Free user can use AI Recognition only within configured free quota.
+- [ ] Free user AI Recognition is rejected with `FREE_LIMIT_REACHED` after quota.
+- [ ] Paid user with active subscription can access all lessons.
+- [ ] Paid user with active subscription can use AI Recognition.
+- [ ] User with `PENDING_CONFIRMATION` payment sees pending/recovery state, not full unlock.
+- [ ] User with `PAID_SUBSCRIPTION_PENDING` can trigger sync/recovery and is not asked to pay again.
+- [ ] Frontend locked states match backend decisions.
+
+Acceptance:
+- Free users have a usable preview but cannot consume the full paid catalog.
+- Paid users unlock lessons and AI Recognition only from verified backend subscription state.
+- Direct API calls cannot bypass premium limits.
+- Payment recovery states are handled without charging users twice.
+
+---
+
+## 12. Phase 7 - Frontend Google Login
 
 Files likely involved:
 
@@ -682,7 +786,7 @@ Acceptance:
 
 ---
 
-## 12. Phase 8 - Frontend Admin Dashboard
+## 13. Phase 8 - Frontend Admin Dashboard
 
 Admin route:
 
@@ -749,7 +853,7 @@ Acceptance:
 
 ---
 
-## 13. Phase 9 - Deploy Plan Updates
+## 14. Phase 9 - Deploy Plan Updates
 
 Update these files after implementation:
 
@@ -759,6 +863,7 @@ Update these files after implementation:
 - [ ] `PRE_DEPLOY_HOLISTIC_REFACTOR_PLAN.md` session log or follow-up section.
 - [ ] `v-sign-be/docs/deployment/deployment-smoke-test-checklist.md`.
 - [ ] `v-sign-be/docs/deployment/github-actions-ghcr-caddy-runbook.md`.
+- [ ] Document free vs premium lesson/AI access rules after entitlement gates are implemented.
 
 Server `/opt/vsign/.env.prod` must include:
 
@@ -812,7 +917,7 @@ Acceptance:
 
 ---
 
-## 14. Phase 10 - Test Matrix
+## 15. Phase 10 - Test Matrix
 
 Backend:
 
@@ -828,6 +933,8 @@ Backend:
 - [ ] Admin user edit/delete audit tests.
 - [ ] Admin metrics tests.
 - [ ] Activity heartbeat aggregation tests.
+- [ ] Lesson entitlement and premium lock tests.
+- [ ] AI Recognition free quota and paid unlock tests.
 
 Frontend:
 
@@ -850,6 +957,10 @@ Manual browser:
 - [ ] Payment success waits for backend subscription.
 - [ ] Payment success stays pending if webhook is delayed, then updates after sync/retry.
 - [ ] Payment cancel does not activate premium.
+- [ ] Free user sees locked premium lessons after preview limit.
+- [ ] Free user sees AI Recognition quota/lock state.
+- [ ] Paid user can access locked lessons after subscription activation.
+- [ ] Paid user can use AI Recognition after subscription activation.
 - [ ] Admin can list users.
 - [ ] Admin can edit/deactivate user.
 - [ ] Admin metrics show real values.
@@ -865,7 +976,7 @@ Production smoke:
 
 ---
 
-## 15. Recommended Implementation Order
+## 16. Recommended Implementation Order
 
 1. Add env examples and backend properties for PayOS, Google OAuth, and SMTP/password reset.
 2. Add database migration for PayOS, webhook events, reconciliation, Google auth, password reset, and usage tracking.
@@ -874,20 +985,21 @@ Production smoke:
 5. Implement subscription activation from verified PayOS webhook.
 6. Implement PayOS reconciliation: user sync, admin sync, scheduled repair job, and paid-but-subscription-pending state.
 7. Update frontend Premium modal and payment success/cancel/pending pages.
-8. Implement password reset backend and frontend flow.
-9. Implement Google OAuth backend flow.
-10. Update frontend Google login and OAuth success/failure pages.
-11. Replace admin user service with real `users` table data.
-12. Add admin edit/deactivate endpoints and audit logs.
-13. Add user activity heartbeat and metrics aggregation.
-14. Build admin dashboard UI.
-15. Update deploy runbooks and smoke checklist.
-16. Run full backend/AI/frontend verification.
-17. Deploy through existing GitHub Actions + GHCR + Caddy flow.
+8. Implement lesson and AI Recognition entitlement gates now that PayOS has a working upgrade/recovery path.
+9. Implement password reset backend and frontend flow.
+10. Implement Google OAuth backend flow.
+11. Update frontend Google login and OAuth success/failure pages.
+12. Replace admin user service with real `users` table data.
+13. Add admin edit/deactivate endpoints and audit logs.
+14. Add user activity heartbeat and metrics aggregation.
+15. Build admin dashboard UI.
+16. Update deploy runbooks and smoke checklist.
+17. Run full backend/AI/frontend verification.
+18. Deploy through existing GitHub Actions + GHCR + Caddy flow.
 
 ---
 
-## 16. Release Gates
+## 17. Release Gates
 
 Gate 1 - Local complete:
 - [ ] Backend tests pass.
@@ -902,6 +1014,8 @@ Gate 2 - Staging/prod dry run:
 - [ ] Google login works on real Vercel domain.
 - [ ] Admin route is hidden from normal users.
 - [ ] Admin APIs return 403 for normal users.
+- [ ] Free lesson and AI Recognition limits are enforced by backend after PayOS is available.
+- [ ] Paid user unlock has been verified after real PayOS subscription activation.
 
 Gate 3 - Production:
 - [ ] PayOS webhook verified and idempotent.
@@ -909,11 +1023,13 @@ Gate 3 - Production:
 - [ ] Paid orders cannot remain invisible to admin if subscription activation fails.
 - [ ] Password reset is active and protected from account enumeration.
 - [ ] Admin user mutations are audited.
+- [ ] Free users cannot bypass lesson/AI limits by direct API calls.
+- [ ] Paid users are not blocked after verified subscription activation.
 - [ ] Rollback plan still works by GHCR SHA.
 
 ---
 
-## 17. External Docs To Check During Implementation
+## 18. External Docs To Check During Implementation
 
 - PayOS developer docs: `https://payos.vn/docs/`
 - Google Identity Services / OAuth docs: `https://developers.google.com/identity`

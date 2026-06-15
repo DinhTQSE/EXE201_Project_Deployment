@@ -21,6 +21,7 @@ Caddyfile
 AWS_C6A_DEPLOY_PLAN.md
 PRE_DEPLOY_HOLISTIC_REFACTOR_PLAN.md
 PAYOS_GOOGLE_ADMIN_COMPLETION_PLAN.md
+PROJECT_SYSTEM_AND_DEPLOYMENT_GUIDE.md
 ```
 
 Frontend repository is separate:
@@ -37,7 +38,7 @@ The production shape is:
 
 ```text
 Vercel frontend
-  -> https://api.<domain>/api/v1/*
+  -> https://apivsignvn.social/api/v1/*
   -> Caddy on EC2
   -> Spring backend container
   -> private Docker network
@@ -56,8 +57,14 @@ Locked decisions:
 - AI port `8000` must not be public.
 - EC2 pulls Docker images from GHCR. It does not build backend/AI images.
 - GitHub Actions builds backend/AI images as `linux/amd64`.
-- Selected first production server is AWS EC2 `c6a.large`, Ubuntu 24.04 LTS x86_64, 30 GB gp3, 4 GB swap.
+- Selected first production server is AWS EC2 `c6a.large`, Amazon Linux 2023 x86_64, 30 GB gp3, 4 GB swap.
+- Current AWS region is `ap-southeast-1`.
+- Current backend API domain is `apivsignvn.social`.
+- Current frontend production domain is `https://v-sign.vercel.app`.
+- Current deploy path on EC2 is `/opt/vsign`.
 - Do not switch to ARM/Graviton unless backend and AI images and Python AI dependencies are verified for `linux/arm64`.
+
+Frontend production uses React Router `BrowserRouter`. Keep `D:\v-sign-fe\vercel.json` with a rewrite from `/(.*)` to `/index.html`; otherwise direct visits like `/courses` or `/ai-recognition` return Vercel `404: NOT_FOUND`.
 
 ## Deploy Files
 
@@ -149,6 +156,17 @@ APP_DOMAIN
 DEPLOY_PATH
 ```
 
+Current production values:
+
+```text
+SERVER_USER=ec2-user
+DEPLOY_PATH=/opt/vsign
+APP_DOMAIN=apivsignvn.social
+VITE_API_BASE_URL=https://apivsignvn.social/api/v1
+```
+
+Do not store DB, JWT, PayOS, Google, SMTP, or Supabase secrets in GitHub Actions for this deployment model. They belong in `/opt/vsign/.env.prod` or the relevant local ignored `.env` file.
+
 ## AI Contract
 
 Client-side MediaPipe Holistic is a locked design decision.
@@ -239,6 +257,13 @@ Payment rules:
   - idempotent subscription activation
 - Do not ask a user to pay again while an existing paid/recoverable order is unresolved.
 
+Lesson and AI entitlement rules:
+
+- Lessons and AI Recognition may stay free until PayOS checkout, webhook, reconciliation, and FE pending/recovery states are complete.
+- After PayOS is complete, implement backend-enforced free vs premium gates for lessons and AI Recognition as described in `PAYOS_GOOGLE_ADMIN_COMPLETION_PLAN.md` Phase 6A.
+- Do not implement subscription locks only in FE. Direct backend/API calls must be denied when the user is not entitled.
+- Free limits must be centralized/configurable, not scattered hard-coded checks in React components.
+
 Google login rules:
 
 - New Google users become `USER`, not admin.
@@ -268,6 +293,7 @@ Before major work, read the relevant plan:
 PRE_DEPLOY_HOLISTIC_REFACTOR_PLAN.md
 AWS_C6A_DEPLOY_PLAN.md
 PAYOS_GOOGLE_ADMIN_COMPLETION_PLAN.md
+PROJECT_SYSTEM_AND_DEPLOYMENT_GUIDE.md
 v-sign-be/docs/deployment/github-actions-ghcr-caddy-runbook.md
 v-sign-be/docs/deployment/deployment-smoke-test-checklist.md
 v-sign-be/docs/ops/baseline-cost-performance.md
@@ -339,6 +365,8 @@ powershell -ExecutionPolicy Bypass -File v-sign-be\scripts\scan-predeploy-marker
 - Do not let FE mark lesson completion or premium status as truth.
 - Do not grant admin role from FE state.
 - Do not activate subscription from PayOS return URL alone.
+- Do not remove the Vercel SPA rewrite in `D:\v-sign-fe\vercel.json`.
+- Do not enable lesson/AI premium locks before PayOS recovery states are implemented.
 
 ## Preferred Agent Workflow
 
