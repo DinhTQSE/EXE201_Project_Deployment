@@ -59,11 +59,11 @@ Production rules:
 Use:
 
 ```text
-AWS region: us-east-1
+AWS region: ap-southeast-1
 EC2 instance: c6a.large
 Architecture: x86_64 / linux/amd64
 vCPU/RAM: 2 vCPU / 4 GB RAM
-OS: Ubuntu 24.04 LTS x86_64
+OS: Amazon Linux 2023 x86_64
 Root disk: 30 GB gp3
 Swap: 4 GB
 Runtime: backend + AI + Caddy
@@ -73,11 +73,11 @@ Frontend: Vercel, not EC2
 Estimated 60-day 24/7 cost:
 
 ```text
-c6a.large compute: about 110 USD
-30 GB gp3 EBS: about 5 USD
+c6a.large compute: usually higher than us-east-1; verify current ap-southeast-1 On-Demand price in AWS before launch
+30 GB gp3 EBS: about 5-8 USD
 Public IPv4: about 7-8 USD
 Buffer for transfer/tax/small variance: about 15-25 USD
-Expected total: about 125-148 USD
+Expected total: likely still near the 160 USD target, but tighter than us-east-1
 ```
 
 Why `c6a.large`:
@@ -107,19 +107,33 @@ Prepare these before touching AWS:
 - GitHub access to repository settings and secrets.
 - Vercel access for frontend repo `D:\v-sign-fe`.
 - Supabase/PostgreSQL production database credentials.
-- A production backend API domain, recommended:
+- A production backend API domain. If you already own a domain, recommended:
 
 ```text
 api.<your-domain>
 ```
 
+If you do not own a domain yet, use temporary Elastic-IP hostname mode after allocating the Elastic IP:
+
+```text
+<elastic-ip-with-dashes>.sslip.io
+```
+
+Example:
+
+```text
+52-0-56-137.sslip.io
+```
+
+This hostname resolves to the embedded Elastic IP and lets Caddy request a normal public HTTPS certificate. It is temporary and can be replaced by `api.<your-domain>` later.
+
 Keep these values ready:
 
 ```text
-AWS region = us-east-1
-EC2 user = ubuntu
+AWS region = ap-southeast-1
+EC2 user = ec2-user
 Deploy path = /opt/vsign
-Backend API domain = api.<your-domain>
+Backend API domain = api.<your-domain> or <elastic-ip-with-dashes>.sslip.io
 Production DB schema = vsign_prod
 ```
 
@@ -193,7 +207,7 @@ You will put `DB_SCHEMA=vsign_prod` in the server `/opt/vsign/.env.prod` file la
 Do this in AWS Console.
 
 1. Go to `EC2`.
-2. Select region `us-east-1`.
+2. Select region `ap-southeast-1` (Asia Pacific - Singapore).
 3. Click `Launch instance`.
 4. Name:
 
@@ -204,7 +218,7 @@ vsign-prod-1
 5. AMI:
 
 ```text
-Ubuntu Server 24.04 LTS, x86_64
+Amazon Linux 2023 AMI, 64-bit x86
 ```
 
 6. Instance type:
@@ -257,7 +271,7 @@ Do this in AWS Console.
 
 1. Go to `EC2 > Elastic IPs`.
 2. Click `Allocate Elastic IP address`.
-3. Allocate in `us-east-1`.
+3. Allocate in `ap-southeast-1`.
 4. Select the new Elastic IP.
 5. Click `Actions > Associate Elastic IP address`.
 6. Associate it with `vsign-prod-1`.
@@ -276,12 +290,46 @@ This IP is used by:
 
 ---
 
-## 8. SSH Into The Server
+## 8. Choose Temporary API Hostname
+
+If you do not own a domain yet, use the Elastic IP through `sslip.io`.
+
+Example:
+
+```text
+Elastic IP: 52.0.56.137
+Temporary API hostname: 52-0-56-137.sslip.io
+Temporary API base URL: https://52-0-56-137.sslip.io/api/v1
+```
+
+Rules:
+
+- Use dashes instead of dots in the IP part.
+- Do not include `http://` or `https://` in the GitHub `APP_DOMAIN` secret.
+- Use the temporary hostname in `APP_DOMAIN`, not the raw IP, if Vercel frontend needs to call the API.
+- Raw `http://<elastic-ip>` is acceptable only for backend smoke testing, not for Vercel production, because Vercel HTTPS pages cannot safely call HTTP APIs.
+- Later, when you buy a domain, change `APP_DOMAIN` to `api.<your-domain>`, change Vercel `VITE_API_BASE_URL`, and rerun deploy.
+
+Verify the temporary hostname from local PowerShell:
+
+```powershell
+nslookup <elastic-ip-with-dashes>.sslip.io
+```
+
+Expected:
+
+```text
+<elastic-ip-with-dashes>.sslip.io resolves to <elastic-ip>
+```
+
+---
+
+## 9. SSH Into The Server
 
 From local PowerShell:
 
 ```powershell
-ssh -i C:\path\to\vsign-prod.pem ubuntu@<elastic-ip>
+ssh -i C:\path\to\vsign-prod.pem ec2-user@<elastic-ip>
 ```
 
 If Windows OpenSSH rejects the key because of permissions, run this locally:
@@ -294,41 +342,40 @@ icacls "C:\path\to\vsign-prod.pem" /grant:r "$($env:USERNAME):(R)"
 Then SSH again:
 
 ```powershell
-ssh -i C:\path\to\vsign-prod.pem ubuntu@<elastic-ip>
+ssh -i C:\path\to\vsign-prod.pem ec2-user@<elastic-ip>
 ```
 
 Expected result:
 
 ```text
-ubuntu@ip-...:~$
+ec2-user@ip-...:~$
 ```
 
 ---
 
-## 9. Bootstrap The Server
+## 10. Bootstrap The Server
 
 Run these commands on the EC2 server through SSH.
 
 Update packages:
 
 ```bash
-sudo apt-get update
-sudo apt-get upgrade -y
+sudo dnf update -y
 ```
 
-Install Docker Engine and Compose plugin:
+Install Docker Engine and Compose plugin.
+
+Amazon Linux 2023 normally already includes `curl-minimal`. Do not install the full `curl` package unless needed, because it can conflict with `curl-minimal`.
 
 ```bash
-sudo apt-get install -y ca-certificates curl gnupg
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin git
+sudo dnf install -y docker git
+sudo systemctl enable --now docker
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 ```
 
-Allow the `ubuntu` user to run Docker:
+Allow the `ec2-user` user to run Docker:
 
 ```bash
 sudo usermod -aG docker "$USER"
@@ -338,7 +385,7 @@ exit
 SSH back in:
 
 ```powershell
-ssh -i C:\path\to\vsign-prod.pem ubuntu@<elastic-ip>
+ssh -i C:\path\to\vsign-prod.pem ec2-user@<elastic-ip>
 ```
 
 Verify:
@@ -372,15 +419,15 @@ Expected:
 - `docker version` works without `sudo`.
 - `docker compose version` works.
 - `free -h` shows about 4 GB swap.
-- `/opt/vsign` is writable by `ubuntu`.
+- `/opt/vsign` is writable by `ec2-user`.
 
 ---
 
-## 10. Create Server Env Files
+## 11. Create Server Env Files
 
 These files are created on the EC2 server. They are not committed to GitHub.
 
-### 10.1 Backend Env
+### 11.1 Backend Env
 
 On EC2:
 
@@ -420,7 +467,7 @@ Save in nano:
 Ctrl+O, Enter, Ctrl+X
 ```
 
-### 10.2 AI Env
+### 11.2 AI Env
 
 On EC2:
 
@@ -443,7 +490,7 @@ VSIGN_AI_MAX_CONCURRENT_PREDICTIONS=1
 
 Save.
 
-### 10.3 Confirm Env Files Exist
+### 11.3 Confirm Env Files Exist
 
 On EC2:
 
@@ -462,9 +509,16 @@ Do not print these files in terminal screenshots or commit logs because they con
 
 ---
 
-## 11. Configure DNS
+## 12. Configure DNS Or Temporary Hostname
 
-In your DNS provider:
+If you are using temporary Elastic-IP hostname mode with `sslip.io`, skip custom DNS setup for now and use:
+
+```text
+APP_DOMAIN=<elastic-ip-with-dashes>.sslip.io
+VITE_API_BASE_URL=https://<elastic-ip-with-dashes>.sslip.io/api/v1
+```
+
+If you own a domain, configure your DNS provider:
 
 1. Create an `A` record:
 
@@ -497,11 +551,11 @@ Cloudflare note:
 
 ---
 
-## 12. Configure GitHub Repository
+## 13. Configure GitHub Repository
 
 Do this in GitHub web UI for the server repository.
 
-### 12.1 Workflow Permissions
+### 13.1 Workflow Permissions
 
 Go to:
 
@@ -517,7 +571,7 @@ Read and write permissions
 
 Reason: the workflow uses `GITHUB_TOKEN` to push Docker images to GHCR.
 
-### 12.2 Add Repository Secrets
+### 13.2 Add Repository Secrets
 
 Go to:
 
@@ -529,12 +583,18 @@ Add:
 
 ```text
 SERVER_IP=<elastic-ip>
-SERVER_USER=ubuntu
+SERVER_USER=ec2-user
 SERVER_SSH_KEY=<full private key content from the EC2 key pair>
 GHCR_USERNAME=<your-github-username>
 GHCR_TOKEN=<github-token-that-can-read-ghcr-packages>
-APP_DOMAIN=api.<your-domain>
+APP_DOMAIN=<elastic-ip-with-dashes>.sslip.io
 DEPLOY_PATH=/opt/vsign
+```
+
+If you already own a domain, use this instead:
+
+```text
+APP_DOMAIN=api.<your-domain>
 ```
 
 Secret notes:
@@ -545,7 +605,7 @@ Secret notes:
 - A classic PAT with `read:packages` is usually enough for package pull. If packages are tied to a private repo, also ensure the token has access to that repo.
 - DB credentials do not go into GitHub secrets for this setup. They live only in `/opt/vsign/.env.prod` on the server.
 
-### 12.3 Create The GHCR Token
+### 13.3 Create The GHCR Token
 
 There are two different GitHub tokens in this deploy flow:
 
@@ -614,7 +674,7 @@ If you make GHCR packages public, anonymous Docker pull can work. This runbook s
 
 ---
 
-## 13. Push Server Repo To GitHub
+## 14. Push Server Repo To GitHub
 
 From local PowerShell:
 
@@ -643,7 +703,7 @@ If you do not want to push yet, stop here.
 
 ---
 
-## 14. First GitHub Actions Deploy
+## 15. First GitHub Actions Deploy
 
 In GitHub:
 
@@ -684,12 +744,12 @@ If deploy fails with missing `.env.prod`, SSH into EC2 and create `/opt/vsign/.e
 
 ---
 
-## 15. Verify Server After Deploy
+## 16. Verify Server After Deploy
 
 SSH into EC2:
 
 ```powershell
-ssh -i C:\path\to\vsign-prod.pem ubuntu@<elastic-ip>
+ssh -i C:\path\to\vsign-prod.pem ec2-user@<elastic-ip>
 ```
 
 Run:
@@ -729,13 +789,13 @@ docker stats --no-stream
 
 ---
 
-## 16. Public API Smoke Test
+## 17. Public API Smoke Test
 
 From local PowerShell:
 
 ```powershell
-curl.exe -i https://api.<your-domain>/api/v1/health
-curl.exe -i https://api.<your-domain>/api/v1/version
+curl.exe -i https://<app-domain>/api/v1/health
+curl.exe -i https://<app-domain>/api/v1/version
 ```
 
 Expected:
@@ -747,7 +807,7 @@ Expected:
 Root path should not expose the app:
 
 ```powershell
-curl.exe -i https://api.<your-domain>/
+curl.exe -i https://<app-domain>/
 ```
 
 Expected:
@@ -759,7 +819,7 @@ Expected:
 Direct AI access should not exist publicly:
 
 ```powershell
-curl.exe -i https://api.<your-domain>/ai/health
+curl.exe -i https://<app-domain>/ai/health
 ```
 
 Expected:
@@ -783,14 +843,20 @@ AI health JSON
 
 ---
 
-## 17. Configure Vercel Frontend
+## 18. Configure Vercel Frontend
 
 Do this in the Vercel project connected to frontend repo `D:\v-sign-fe`.
 
 Set environment variable:
 
 ```text
-VITE_API_BASE_URL=https://api.<your-domain>/api/v1
+VITE_API_BASE_URL=https://<app-domain>/api/v1
+```
+
+For temporary Elastic-IP hostname mode:
+
+```text
+VITE_API_BASE_URL=https://<elastic-ip-with-dashes>.sslip.io/api/v1
 ```
 
 Do not set a public AI URL.
@@ -800,20 +866,20 @@ Deploy frontend on Vercel.
 Expected frontend API behavior:
 
 ```text
-FE -> https://api.<your-domain>/api/v1/*
+FE -> https://<app-domain>/api/v1/*
 ```
 
 Not allowed:
 
 ```text
 FE -> http://ai:8000/*
-FE -> https://api.<your-domain>/ai/*
+FE -> https://<app-domain>/ai/*
 FE -> localhost in production
 ```
 
 ---
 
-## 18. End-To-End Smoke Test
+## 19. End-To-End Smoke Test
 
 Use the deployed Vercel frontend.
 
@@ -834,7 +900,7 @@ Run these checks:
 
 Browser DevTools network checks:
 
-- Requests go to `https://api.<your-domain>/api/v1`.
+- Requests go to `https://<app-domain>/api/v1`.
 - No request goes to `localhost`.
 - No request goes to `/ai`.
 - AI practice request sends landmark sequence only.
@@ -842,7 +908,7 @@ Browser DevTools network checks:
 
 ---
 
-## 19. Runtime Metrics To Record
+## 20. Runtime Metrics To Record
 
 After first successful deploy, record these in `v-sign-be/docs/ops/baseline-cost-performance.md`:
 
@@ -863,14 +929,14 @@ docker compose --env-file .env.deploy -f docker-compose.prod.yml logs --tail=200
 
 ---
 
-## 20. Rollback
+## 21. Rollback
 
 Use this if the latest deploy is broken and you know a previous good GHCR SHA tag.
 
 SSH into EC2:
 
 ```powershell
-ssh -i C:\path\to\vsign-prod.pem ubuntu@<elastic-ip>
+ssh -i C:\path\to\vsign-prod.pem ec2-user@<elastic-ip>
 ```
 
 On EC2:
@@ -885,7 +951,7 @@ Set:
 ```properties
 GHCR_OWNER=<github-owner-lowercase>
 IMAGE_TAG=sha-previous
-APP_DOMAIN=api.<your-domain>
+APP_DOMAIN=<app-domain>
 ```
 
 Then:
@@ -898,21 +964,21 @@ docker compose --env-file .env.deploy -f docker-compose.prod.yml ps
 
 Rollback is valid only if:
 
-- `https://api.<your-domain>/api/v1/health` returns healthy.
+- `https://<app-domain>/api/v1/health` returns healthy.
 - Internal `http://ai:8000/health` works from backend.
 - Caddy serves HTTPS.
 - Login and free lesson flow still work.
 
 ---
 
-## 21. Common Failure Checks
+## 22. Common Failure Checks
 
 ### GitHub deploy cannot SSH
 
 Check:
 
 - `SERVER_IP` secret is the Elastic IP.
-- `SERVER_USER=ubuntu`.
+- `SERVER_USER=ec2-user`.
 - `SERVER_SSH_KEY` contains the full private key.
 - EC2 security group allows SSH from GitHub runner IPs or from anywhere temporarily.
 - The instance is running.
@@ -930,10 +996,11 @@ Check:
 
 Check:
 
-- DNS `A` record points to the Elastic IP.
+- If using your own domain, DNS `A` record points to the Elastic IP.
+- If using temporary mode, `<elastic-ip-with-dashes>.sslip.io` resolves to the Elastic IP.
 - Ports `80` and `443` are open in the security group.
 - No other process is using ports `80` or `443`.
-- `APP_DOMAIN` secret matches the DNS name exactly.
+- `APP_DOMAIN` secret matches the hostname exactly.
 
 ### Backend starts but DB migration fails
 
@@ -953,7 +1020,7 @@ create schema if not exists vsign_prod;
 
 Check:
 
-- Vercel env `VITE_API_BASE_URL=https://api.<your-domain>/api/v1`.
+- Vercel env `VITE_API_BASE_URL=https://<app-domain>/api/v1`.
 - Backend CORS includes the exact Vercel domain in `APP_CORS_ALLOWED_ORIGINS`.
 - Redeploy Vercel after changing env.
 - Backend health endpoint works publicly.
@@ -975,7 +1042,7 @@ docker stats --no-stream
 
 ---
 
-## 22. Hard Boundaries
+## 23. Hard Boundaries
 
 Do not do these during the first stable deploy:
 
@@ -989,20 +1056,20 @@ Do not do these during the first stable deploy:
 
 ---
 
-## 23. First Deploy Completion Criteria
+## 24. First Deploy Completion Criteria
 
 Mark the deployment complete only when all are true:
 
 - EC2 `c6a.large` is running.
 - Elastic IP is attached.
-- DNS resolves `api.<your-domain>` to the Elastic IP.
+- `APP_DOMAIN` resolves to the Elastic IP. This can be `api.<your-domain>` or `<elastic-ip-with-dashes>.sslip.io`.
 - `/opt/vsign/.env.prod` exists on EC2.
 - `/opt/vsign/.env.ai.prod` exists on EC2.
 - GitHub Actions test job passes.
 - GHCR backend and AI images are published.
 - GitHub Actions deploy job succeeds.
 - `backend`, `ai`, and `caddy` containers are running.
-- `GET https://api.<your-domain>/api/v1/health` returns healthy.
+- `GET https://<app-domain>/api/v1/health` returns healthy.
 - Vercel frontend uses the production API domain.
 - Login, free lesson, quiz, AI practice, and completion work.
 - Browser network shows no raw image/base64 upload.
