@@ -80,7 +80,7 @@ Recommended request timing method:
 
 Chosen initial server target:
 
-- AWS EC2 `c6i.large`.
+- AWS EC2 `c6a.large`.
 - 2 vCPU, 4 GiB RAM.
 - Ubuntu 24.04 LTS.
 - 30 GiB gp3 root volume.
