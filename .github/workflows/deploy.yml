@@ -164,4 +164,4 @@ jobs:
           docker compose --env-file .env.deploy -f docker-compose.prod.yml up -d --remove-orphans
           docker image prune -af --filter "until=168h"
           docker compose --env-file .env.deploy -f docker-compose.prod.yml ps
-REMOTE
+          REMOTE
