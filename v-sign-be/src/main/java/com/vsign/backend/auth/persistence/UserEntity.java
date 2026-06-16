@@ -51,6 +51,9 @@ public class UserEntity {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "last_seen_at")
+    private OffsetDateTime lastSeenAt;
+
     @PrePersist
     void prePersist() {
         OffsetDateTime now = OffsetDateTime.now();
@@ -167,5 +170,13 @@ public class UserEntity {
 
     public OffsetDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public OffsetDateTime getLastSeenAt() {
+        return lastSeenAt;
+    }
+
+    public void setLastSeenAt(OffsetDateTime lastSeenAt) {
+        this.lastSeenAt = lastSeenAt;
     }
 }

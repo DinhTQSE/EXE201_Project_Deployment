@@ -11,6 +11,7 @@ import com.vsign.backend.common.exception.BusinessException;
 import com.vsign.backend.common.exception.ErrorCode;
 import com.vsign.backend.common.exception.FieldValidationException;
 import com.vsign.backend.common.security.JwtService;
+import java.time.OffsetDateTime;
 import java.util.Locale;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,7 @@ public class AuthService {
         return toAuthResponse(userRepository.save(user));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         UserEntity user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.email()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS, "Tài khoản không tồn tại."));
@@ -62,6 +63,8 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, "Sai mật khẩu");
         }
 
+        user.setLastSeenAt(OffsetDateTime.now());
+        userRepository.save(user);
         return toAuthResponse(user);
     }
 

@@ -97,8 +97,13 @@ class FlywayMigrationTest {
                 Integer.class
         );
 
-        Integer productionTestActorAccountsCount = jdbcTemplate.queryForObject(
+        Integer fixtureUserAccountsCount = jdbcTemplate.queryForObject(
                 "select count(*) from users where email in ('learner.basic@vsign.test', 'learner.premium@vsign.test', 'admin@vsign.test', 'superadmin@vsign.test', 'reviewer@vsign.test', 'inactive@vsign.test')",
+                Integer.class
+        );
+
+        Integer userUsageDailyTableCount = jdbcTemplate.queryForObject(
+                "select count(*) from information_schema.tables where lower(table_schema) = 'public' and lower(table_name) = 'user_usage_daily'",
                 Integer.class
         );
 
@@ -117,7 +122,8 @@ class FlywayMigrationTest {
         assertThat(adminReviewQueueCount).isEqualTo(3);
         assertThat(signatureAttemptLogTableCount).isEqualTo(1);
         assertThat(dictionaryVideoVariantsTableCount).isEqualTo(1);
-        assertThat(productionTestActorAccountsCount).isZero();
-        assertThat(appliedVersions).isEqualTo(22);
+        assertThat(fixtureUserAccountsCount).isEqualTo(6);
+        assertThat(userUsageDailyTableCount).isEqualTo(1);
+        assertThat(appliedVersions).isEqualTo(23);
     }
 }
