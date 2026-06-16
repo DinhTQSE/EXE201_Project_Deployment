@@ -162,6 +162,6 @@ jobs:
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
           docker compose --env-file .env.deploy -f docker-compose.prod.yml pull
           docker compose --env-file .env.deploy -f docker-compose.prod.yml up -d --remove-orphans
-          docker image prune -af --filter "until=168h"
+          docker image prune -a -f
           docker compose --env-file .env.deploy -f docker-compose.prod.yml ps
           REMOTE
