@@ -21,7 +21,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import torch
-from fastapi import Body, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -236,6 +236,17 @@ def reject_raw_payload_fields(payload: dict[str, Any]) -> None:
         raise HTTPException(status_code=400, detail=f"Raw frame/video fields are not accepted: {', '.join(forbidden)}")
 
 
+async def read_json_object(request: Request) -> dict[str, Any]:
+    try:
+        payload = await request.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Request body must be valid JSON") from exc
+
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Request body must be a JSON object")
+    return payload
+
+
 def validate_landmark_sequence(payload: dict[str, Any]) -> tuple[list[list[float]], int | None]:
     reject_raw_payload_fields(payload)
     sequence = payload.get("sequence")
@@ -386,10 +397,11 @@ async def enforce_json_body_limit(request: Request, call_next):
 
 
 @app.post("/predict-landmarks", response_model=PredictResponse)
-async def predict_landmarks(payload: dict[str, Any] = Body(...)):
+async def predict_landmarks(request: Request):
     if state.model is None:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
 
+    payload = await read_json_object(request)
     sequence, hands_detected_frames = validate_landmark_sequence(payload)
     started = time.perf_counter()
     result = await classify_landmark_sequence_limited(sequence, hands_detected_frames)
