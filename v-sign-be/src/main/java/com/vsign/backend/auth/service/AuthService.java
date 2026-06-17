@@ -11,6 +11,10 @@ import com.vsign.backend.common.exception.BusinessException;
 import com.vsign.backend.common.exception.ErrorCode;
 import com.vsign.backend.common.exception.FieldValidationException;
 import com.vsign.backend.common.security.JwtService;
+import com.vsign.backend.payment.persistence.TierRepository;
+import com.vsign.backend.payment.persistence.UserTierEntity;
+import com.vsign.backend.payment.persistence.UserTierRepository;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Locale;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,11 +26,17 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final TierRepository tierRepository;
+    private final UserTierRepository userTierRepository;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                       JwtService jwtService, TierRepository tierRepository,
+                       UserTierRepository userTierRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.tierRepository = tierRepository;
+        this.userTierRepository = userTierRepository;
     }
 
     @Transactional
@@ -48,7 +58,22 @@ public class AuthService {
         user.setRole("USER");
         user.setActive(true);
 
-        return toAuthResponse(userRepository.save(user));
+        UserEntity saved = userRepository.save(user);
+
+        tierRepository.findByTitleIgnoreCaseAndIsActiveTrueAndDeletedAtIsNull("free")
+                .ifPresent(freeTier -> {
+                    UserTierEntity userTier = new UserTierEntity();
+                    userTier.setUser(saved);
+                    userTier.setTier(freeTier);
+                    userTier.setStartTime(LocalDateTime.now());
+                    int months = freeTier.getNoMonth() != null && freeTier.getNoMonth() > 0
+                            ? freeTier.getNoMonth() : 120;
+                    userTier.setEndTime(LocalDateTime.now().plusMonths(months));
+                    userTier.setIsActive(true);
+                    userTierRepository.save(userTier);
+                });
+
+        return toAuthResponse(saved);
     }
 
     @Transactional
