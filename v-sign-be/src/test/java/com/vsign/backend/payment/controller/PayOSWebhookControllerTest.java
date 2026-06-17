@@ -79,7 +79,7 @@ class PayOSWebhookControllerTest {
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Invalid webhook"));
+                .andExpect(content().string("Invalid webhook signature"));
     }
 
     @Test

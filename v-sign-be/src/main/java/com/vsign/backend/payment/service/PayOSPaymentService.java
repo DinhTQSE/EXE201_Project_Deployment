@@ -17,8 +17,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,7 +45,7 @@ public class PayOSPaymentService {
         if (!Boolean.TRUE.equals(tier.getIsActive()) || tier.getDeletedAt() != null) {
             throw new IllegalArgumentException("Tier is not available");
         }
-        if (tier.getAmount() <= 0) {
+        if (tier.getAmount() == null || tier.getAmount() <= 0) {
             throw new IllegalArgumentException("Cannot purchase free tier");
         }
 
@@ -199,6 +199,6 @@ public class PayOSPaymentService {
     }
 
     private long generateOrderCode() {
-        return Math.abs(new Random().nextLong() % 1_000_000_000L) + 1;
+        return Math.abs(ThreadLocalRandom.current().nextLong() % 1_000_000_000L) + 1;
     }
 }

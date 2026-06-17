@@ -1,7 +1,7 @@
--- V22: PayOS tier subscription tables
+-- V23: PayOS tier subscription tables
 
 CREATE TABLE IF NOT EXISTS tier (
-    tier_id       UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    tier_id       UUID        PRIMARY KEY,
     title         VARCHAR(50) NOT NULL,
     amount        INT         NOT NULL,
     no_month      INT         NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS tier (
 );
 
 CREATE TABLE IF NOT EXISTS user_tier (
-    id         UUID      PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID      PRIMARY KEY,
     uid        UUID      NOT NULL REFERENCES users(id),
     tier_id    UUID      NOT NULL REFERENCES tier(tier_id),
     start_time TIMESTAMP NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS user_tier (
 );
 
 CREATE TABLE IF NOT EXISTS payment_order (
-    order_id        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id        UUID        PRIMARY KEY,
     uid             UUID        NOT NULL REFERENCES users(id),
     tier_id         UUID        NOT NULL REFERENCES tier(tier_id),
     order_code      BIGINT      NOT NULL UNIQUE,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS payment_order (
 );
 
 CREATE TABLE IF NOT EXISTS payment_transaction (
-    transaction_id   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction_id   UUID        PRIMARY KEY,
     order_id         UUID        NOT NULL REFERENCES payment_order(order_id),
     amount           INT         NOT NULL,
     payment_link_id  VARCHAR(255),

@@ -24,13 +24,25 @@ public class PayOSWebhookController {
 
     @PostMapping
     public ResponseEntity<String> webhook(@RequestBody Webhook webhook) {
+        var data = verifyWebhook(webhook);
+        if (data == null) {
+            return ResponseEntity.badRequest().body("Invalid webhook signature");
+        }
         try {
-            var data = payOS.webhooks().verify(webhook);
             webhookService.handlePayOSWebhook(data);
             return ResponseEntity.ok("OK");
         } catch (Exception e) {
-            log.warn("PayOS webhook rejected: {}", e.getMessage());
-            return ResponseEntity.badRequest().body("Invalid webhook");
+            log.error("PayOS webhook processing failed: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Webhook processing error");
+        }
+    }
+
+    private vn.payos.model.webhooks.WebhookData verifyWebhook(Webhook webhook) {
+        try {
+            return payOS.webhooks().verify(webhook);
+        } catch (Exception e) {
+            log.warn("PayOS webhook signature verification failed: {}", e.getMessage());
+            return null;
         }
     }
 }
