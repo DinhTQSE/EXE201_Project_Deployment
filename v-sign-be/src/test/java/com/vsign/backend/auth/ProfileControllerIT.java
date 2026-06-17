@@ -59,8 +59,8 @@ class ProfileControllerIT {
                 .andExpect(jsonPath("$.data.longestStreak").value(0))
                 .andExpect(jsonPath("$.data.badges").isArray())
                 .andExpect(jsonPath("$.data.badges").isEmpty())
-                .andExpect(jsonPath("$.data.subscription.planType").value("BASIC"))
-                .andExpect(jsonPath("$.data.subscription.status").value("INACTIVE"));
+                .andExpect(jsonPath("$.data.subscription.planType").value("FREE"))
+                .andExpect(jsonPath("$.data.subscription.status").value("ACTIVE"));
     }
 
     @Test

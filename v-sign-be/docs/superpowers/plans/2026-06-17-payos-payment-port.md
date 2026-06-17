@@ -70,7 +70,9 @@
 | `src/main/resources/application.properties` | Add 5 `payos.*` property stubs |
 | `src/main/java/com/vsign/backend/common/security/SecurityConfig.java` | Add 3 `permitAll` matchers before blanket `/api/v1/payments/**` rule |
 | `src/main/java/com/vsign/backend/VSignBackendApplication.java` | Add `@EnableScheduling` |
-| `src/main/java/com/vsign/backend/auth/service/AuthService.java` | Add `TierRepository` + `UserTierRepository` to constructor; create free `UserTierEntity` after user save |
+| `src/main/java/com/vsign/backend/auth/service/AuthService.java` | Add `TierRepository` |
+| `ProfileService` | [/] Inject `UserTierRepository` into `ProfileService` constructor. |
+| `ProfileService` | [/] Update `ProfileService.toResponse()` to query the database and map active subscription details. |
 
 ---
 

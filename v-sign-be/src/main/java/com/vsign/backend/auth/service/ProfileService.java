@@ -8,6 +8,8 @@ import com.vsign.backend.auth.persistence.UserRepository;
 import com.vsign.backend.common.exception.BusinessException;
 import com.vsign.backend.common.exception.ErrorCode;
 import com.vsign.backend.common.exception.FieldValidationException;
+import com.vsign.backend.payment.persistence.UserTierRepository;
+import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,10 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProfileService {
     private final UserRepository userRepository;
     private final AuthService authService;
+    private final UserTierRepository userTierRepository;
 
-    public ProfileService(UserRepository userRepository, AuthService authService) {
+    public ProfileService(UserRepository userRepository, AuthService authService, UserTierRepository userTierRepository) {
         this.userRepository = userRepository;
         this.authService = authService;
+        this.userTierRepository = userTierRepository;
     }
 
     @Transactional
@@ -47,6 +51,20 @@ public class ProfileService {
     }
 
     private ProfileResponse toResponse(UserEntity user) {
+        var activeTiers = userTierRepository.findCurrentActiveByUserId(user.getId(), LocalDateTime.now());
+        ProfileResponse.SubscriptionSummaryResponse subscriptionResponse;
+        if (activeTiers.isEmpty()) {
+            subscriptionResponse = new ProfileResponse.SubscriptionSummaryResponse("FREE", "INACTIVE", null, null);
+        } else {
+            var activeTier = activeTiers.get(0);
+            subscriptionResponse = new ProfileResponse.SubscriptionSummaryResponse(
+                    activeTier.getTier().getTitle().toUpperCase(),
+                    "ACTIVE",
+                    activeTier.getStartTime().toString(),
+                    activeTier.getEndTime().toString()
+            );
+        }
+
         return new ProfileResponse(
                 user.getId().toString(),
                 user.getEmail(),
@@ -59,7 +77,7 @@ public class ProfileService {
                 user.getTotalXp(),
                 user.getCurrentStreak(),
                 user.getLongestStreak(),
-                new ProfileResponse.SubscriptionSummaryResponse("BASIC", "INACTIVE", null, null),
+                subscriptionResponse,
                 java.util.List.of()
         );
     }
