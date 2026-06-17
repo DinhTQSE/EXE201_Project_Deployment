@@ -1,6 +1,7 @@
 package com.vsign.backend.auth.controller;
 
 import com.vsign.backend.auth.dto.AuthResponse;
+import com.vsign.backend.auth.dto.PasswordResetCompleteRequest;
 import com.vsign.backend.auth.dto.PasswordResetRequest;
 import com.vsign.backend.auth.dto.LoginRequest;
 import com.vsign.backend.auth.dto.RegisterRequest;
@@ -38,5 +39,11 @@ public class AuthController {
     public SuccessResponse<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
         authService.requestPasswordReset(request);
         return SuccessResponse.ok("Password reset requested", null);
+    }
+
+    @PostMapping("/password-reset/complete")
+    public SuccessResponse<Void> completePasswordReset(@Valid @RequestBody PasswordResetCompleteRequest request) {
+        authService.completePasswordReset(request);
+        return SuccessResponse.ok("Password reset successfully completed", null);
     }
 }

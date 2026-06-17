@@ -14,10 +14,17 @@ import com.vsign.backend.common.security.JwtService;
 import com.vsign.backend.payment.persistence.TierRepository;
 import com.vsign.backend.payment.persistence.UserTierEntity;
 import com.vsign.backend.payment.persistence.UserTierRepository;
+import com.vsign.backend.auth.dto.PasswordResetCompleteRequest;
+import com.vsign.backend.common.mail.EmailService;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.Base64;
 import java.util.Locale;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,15 +37,20 @@ public class AuthService {
     private final JwtService jwtService;
     private final TierRepository tierRepository;
     private final UserTierRepository userTierRepository;
+    private final EmailService emailService;
+
+    @Value("${app.password-reset.frontend-url:http://localhost:5173/reset-password}")
+    private String passwordResetUrl;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        JwtService jwtService, TierRepository tierRepository,
-                       UserTierRepository userTierRepository) {
+                       UserTierRepository userTierRepository, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.tierRepository = tierRepository;
         this.userTierRepository = userTierRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -113,8 +125,69 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void requestPasswordReset(PasswordResetRequest request) {
-        // Intentionally no-op in this FE-first phase to avoid account enumeration.
+        String email = normalizeEmail(request.email());
+        UserEntity user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+        if (user != null) {
+            // Generate secure random 32-byte token
+            String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                    UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
+            String tokenHash = sha256(rawToken);
+
+            user.setPwdResetTokenHash(tokenHash);
+            user.setPwdResetExpiry(OffsetDateTime.now().plusMinutes(15));
+            userRepository.save(user);
+
+            // Send reset email asynchronously
+            String resetLink = passwordResetUrl + "?token=" + rawToken;
+            String subject = "Yêu cầu khôi phục mật khẩu V-Sign";
+            String body = "<h3>Yêu cầu khôi phục mật khẩu tài khoản V-Sign</h3>" +
+                    "<p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản: <strong>" + email + "</strong></p>" +
+                    "<p>Vui lòng click vào đường liên kết dưới đây để thực hiện thay đổi mật khẩu (liên kết có hiệu lực trong 15 phút):</p>" +
+                    "<p><a href=\"" + resetLink + "\">" + resetLink + "</a></p>" +
+                    "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>";
+            emailService.sendEmail(email, subject, body);
+        }
+    }
+
+    @Transactional
+    public void completePasswordReset(PasswordResetCompleteRequest request) {
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new FieldValidationException("confirmPassword", "Mật khẩu xác nhận không khớp.");
+        }
+        if (request.newPassword().length() < 8 || !request.newPassword().matches(".*[A-Z].*") || !request.newPassword().matches(".*\\d.*")) {
+            throw new FieldValidationException("newPassword", "Mật khẩu tối thiểu 8 ký tự, có chữ hoa và số.");
+        }
+
+        String tokenHash = sha256(request.token());
+        UserEntity user = userRepository.findByPwdResetTokenHash(tokenHash)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN, "Liên kết đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu lại."));
+
+        if (user.getPwdResetExpiry() == null || user.getPwdResetExpiry().isBefore(OffsetDateTime.now())) {
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED, "Liên kết đã hết hạn. Vui lòng yêu cầu lại.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setPwdResetTokenHash(null);
+        user.setPwdResetExpiry(null);
+        userRepository.save(user);
+    }
+
+    private String sha256(String data) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("SHA-256 hashing failed", e);
+        }
     }
 
     private AuthResponse toAuthResponse(UserEntity user) {

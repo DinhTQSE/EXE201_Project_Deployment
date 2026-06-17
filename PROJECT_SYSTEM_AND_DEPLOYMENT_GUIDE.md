@@ -1,6 +1,6 @@
 # V-Sign System And Deployment Guide
 
-Last updated: 2026-06-15
+Last updated: 2026-06-18
 
 This document is for developers joining the project. It explains the current repository split, runtime architecture, deployment flow, environment ownership, and the rules that must not be broken while adding features.
 
@@ -391,18 +391,21 @@ Entitlement rules after PayOS:
 - Free limits must be centralized/configurable.
 - Direct API calls must not bypass premium limits.
 
-Google login rules:
+Google login rules (Implemented):
 
 - New Google users become `USER`.
 - Existing admin role may be preserved only when the verified Google email already belongs to an admin account.
 - Do not grant admin by frontend flag, localStorage, email domain, or query param.
+- Google OAuth initiation endpoint is `GET /api/v1/auth/google/login-url` (returns the consent screen redirect URL).
+- Google OAuth callback endpoint is `GET /api/v1/auth/google/callback?code=...` (redirects to the frontend success/failure URL with token parameters).
 
-Password reset rules:
+Password reset rules (Implemented):
 
-- Implement real email reset.
-- Store only hashed reset tokens.
-- Tokens are short-lived and single-use.
-- Reset request must not leak whether an email exists.
+- Real email reset using JavaMailSender/SMTP.
+- Generates base64url raw tokens sent via email, and stores only their SHA-256 hashes in DB.
+- Tokens expire in 15 minutes and are single-use.
+- Request endpoint (`POST /api/v1/auth/password-reset/request`) does not leak whether an email exists (always returns a generic success response).
+- Reset completion endpoint is `POST /api/v1/auth/password-reset/complete`.
 
 Admin rules:
 
@@ -457,7 +460,7 @@ Backend:
 ```powershell
 cd D:\V-sign_EXE101_Project\v-sign-be
 mvn.cmd -q test
-mvn.cmd -q "-Dtest=LearningWorkflowIT,GamificationControllerIT,SubscriptionControllerIT,HealthControllerIT,FlywayMigrationTest" test
+mvn.cmd -q "-Dtest=LearningWorkflowIT,GamificationControllerIT,SubscriptionControllerIT,HealthControllerIT,FlywayMigrationTest,PasswordResetControllerIT,GoogleOAuthControllerIT" test
 ```
 
 AI:

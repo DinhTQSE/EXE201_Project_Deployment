@@ -19,6 +19,8 @@ public enum ErrorCode {
     CHAPTER_NOT_FOUND(HttpStatus.NOT_FOUND, "Chapter not found"),
     LESSON_NOT_FOUND(HttpStatus.NOT_FOUND, "Lesson not found"),
     ATTEMPT_NOT_FOUND(HttpStatus.NOT_FOUND, "Attempt not found"),
+    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "Invalid token"),
+    TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "Token expired"),
     AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI service unavailable"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
 
