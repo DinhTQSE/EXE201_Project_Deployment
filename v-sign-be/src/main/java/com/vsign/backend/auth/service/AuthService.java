@@ -17,10 +17,12 @@ import com.vsign.backend.payment.persistence.UserTierRepository;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Locale;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 public class AuthService {
     private final UserRepository userRepository;
@@ -60,18 +62,22 @@ public class AuthService {
 
         UserEntity saved = userRepository.save(user);
 
-        tierRepository.findByTitleIgnoreCaseAndIsActiveTrueAndDeletedAtIsNull("free")
-                .ifPresent(freeTier -> {
-                    UserTierEntity userTier = new UserTierEntity();
-                    userTier.setUser(saved);
-                    userTier.setTier(freeTier);
-                    userTier.setStartTime(LocalDateTime.now());
-                    int months = freeTier.getNoMonth() != null && freeTier.getNoMonth() > 0
-                            ? freeTier.getNoMonth() : 120;
-                    userTier.setEndTime(LocalDateTime.now().plusMonths(months));
-                    userTier.setIsActive(true);
-                    userTierRepository.save(userTier);
-                });
+        var freeTierOpt = tierRepository.findByTitleIgnoreCaseAndIsActiveTrueAndDeletedAtIsNull("free");
+        if (freeTierOpt.isEmpty()) {
+            log.warn("No active free tier found in database — new user {} registered without a tier", email);
+        } else {
+            var freeTier = freeTierOpt.get();
+            LocalDateTime now = LocalDateTime.now();
+            int months = freeTier.getNoMonth() != null && freeTier.getNoMonth() > 0
+                    ? freeTier.getNoMonth() : 120;
+            UserTierEntity userTier = new UserTierEntity();
+            userTier.setUser(saved);
+            userTier.setTier(freeTier);
+            userTier.setStartTime(now);
+            userTier.setEndTime(now.plusMonths(months));
+            userTier.setIsActive(true);
+            userTierRepository.save(userTier);
+        }
 
         return toAuthResponse(saved);
     }
