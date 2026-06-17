@@ -2,6 +2,7 @@ package com.vsign.backend.payment.service;
 
 import com.vsign.backend.auth.persistence.UserEntity;
 import com.vsign.backend.auth.persistence.UserRepository;
+import com.vsign.backend.common.mail.EmailService;
 import com.vsign.backend.payment.config.PayOSConfig;
 import com.vsign.backend.payment.dto.CreatePaymentRequest;
 import com.vsign.backend.payment.dto.PayOSReturnRequest;
@@ -30,6 +31,7 @@ class PayOSPaymentServiceTest {
     @Mock UserTierRepository userTierRepository;
     @Mock PayOS payOS;
     @Mock PayOSConfig payOSConfig;
+    @Mock EmailService emailService;
 
     @InjectMocks PayOSPaymentService service;
 
@@ -115,16 +117,25 @@ class PayOSPaymentServiceTest {
     }
 
     @Test
-    void handlePayOSReturn_doesNotUpgradeTierWhenStatusPaid() {
+    void handlePayOSReturn_doesNotUpgradeTierWhenAlreadyHasActivePaidSubscription() {
         UserEntity owner = user(UUID.randomUUID());
+        TierEntity existingTier = tier(UUID.randomUUID(), "plus", 49000);
+        UserTierEntity activePaid = new UserTierEntity();
+        activePaid.setTier(existingTier);
 
         PayOSOrderEntity order = new PayOSOrderEntity();
         order.setUser(owner);
+        order.setTier(existingTier);
+        order.setAmount(49000);
+        order.setOrderCode(789L);
         order.setStatus(PaymentOrderStatus.PENDING);
 
         when(userRepository.findByEmailIgnoreCase("owner@test.com")).thenReturn(Optional.of(owner));
         when(orderRepository.findByOrderCode(789L)).thenReturn(Optional.of(order));
         when(orderRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        // User already has a paid active subscription -> upgradeUserTier returns early
+        when(userTierRepository.findCurrentActiveByUserIdForUpdate(eq(owner.getId()), any()))
+                .thenReturn(List.of(activePaid));
 
         PayOSReturnRequest req = new PayOSReturnRequest();
         req.setOrderCode(789L);

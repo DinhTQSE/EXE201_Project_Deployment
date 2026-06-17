@@ -1,6 +1,7 @@
 package com.vsign.backend.payment.service;
 
 import com.vsign.backend.payment.persistence.*;
+import com.vsign.backend.common.mail.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class PayOSWebhookService {
     private final PayOSOrderRepository orderRepository;
     private final PayOSTransactionRepository transactionRepository;
     private final UserTierRepository userTierRepository;
+    private final EmailService emailService;
 
     @Transactional
     public void handlePayOSWebhook(WebhookData data) {
@@ -99,6 +101,16 @@ public class PayOSWebhookService {
         userTier.setEndTime(LocalDateTime.now().plusMonths(order.getTier().getNoMonth()));
         userTier.setIsActive(true);
         userTierRepository.save(userTier);
+
+        emailService.sendPaymentSuccessEmail(
+                order.getUser().getEmail(),
+                order.getUser().getFullName(),
+                order.getTier().getTitle(),
+                order.getAmount(),
+                order.getOrderCode(),
+                userTier.getStartTime(),
+                userTier.getEndTime()
+        );
     }
 
     private PayOSOrderEntity lockOrder(long orderCode) {

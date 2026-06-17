@@ -398,6 +398,10 @@ Google login rules (Implemented):
 - Do not grant admin by frontend flag, localStorage, email domain, or query param.
 - Google OAuth initiation endpoint is `GET /api/v1/auth/google/login-url` (returns the consent screen redirect URL).
 - Google OAuth callback endpoint is `GET /api/v1/auth/google/callback?code=...` (redirects to the frontend success/failure URL with token parameters).
+- Authorized Redirect URIs on Google Cloud Console must be:
+  - Local: `http://localhost:8080/V-sign/api/v1/auth/google/callback`
+  - Production: `https://apivsignvn.social/api/v1/auth/google/callback`
+
 
 Password reset rules (Implemented):
 
