@@ -12,4 +12,6 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     long countByActiveTrue();
 
     long countByAccountTypeIgnoreCase(String accountType);
+
+    Optional<UserEntity> findByPwdResetTokenHash(String pwdResetTokenHash);
 }

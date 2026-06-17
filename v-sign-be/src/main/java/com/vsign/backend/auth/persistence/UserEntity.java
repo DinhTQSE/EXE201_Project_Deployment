@@ -54,6 +54,12 @@ public class UserEntity {
     @Column(name = "last_seen_at")
     private OffsetDateTime lastSeenAt;
 
+    @Column(name = "pwd_reset_token_hash")
+    private String pwdResetTokenHash;
+
+    @Column(name = "pwd_reset_expiry")
+    private OffsetDateTime pwdResetExpiry;
+
     @PrePersist
     void prePersist() {
         OffsetDateTime now = OffsetDateTime.now();
@@ -178,5 +184,21 @@ public class UserEntity {
 
     public void setLastSeenAt(OffsetDateTime lastSeenAt) {
         this.lastSeenAt = lastSeenAt;
+    }
+
+    public String getPwdResetTokenHash() {
+        return pwdResetTokenHash;
+    }
+
+    public void setPwdResetTokenHash(String pwdResetTokenHash) {
+        this.pwdResetTokenHash = pwdResetTokenHash;
+    }
+
+    public OffsetDateTime getPwdResetExpiry() {
+        return pwdResetExpiry;
+    }
+
+    public void setPwdResetExpiry(OffsetDateTime pwdResetExpiry) {
+        this.pwdResetExpiry = pwdResetExpiry;
     }
 }
