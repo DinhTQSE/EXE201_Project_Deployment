@@ -116,4 +116,20 @@ public class SignatureAttemptLogEntity {
         this.feedbackCodes = feedbackCodes;
         this.createdAt = OffsetDateTime.now();
     }
+
+    public String getUserKey() {
+        return userKey;
+    }
+
+    public Boolean getCorrect() {
+        return correct;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
 }

@@ -80,6 +80,10 @@ public class LessonProgressEntity {
         return status;
     }
 
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
     public void update(int completionPct, int lastPositionSeconds, String phase, Integer currentQuestionIndex, String status) {
         this.completionPct = completionPct;
         this.lastPositionSeconds = lastPositionSeconds;

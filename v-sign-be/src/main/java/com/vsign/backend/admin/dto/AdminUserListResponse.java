@@ -4,6 +4,9 @@ import java.util.List;
 
 public record AdminUserListResponse(
         List<AdminUserResponse> users,
-        int total
+        int page,
+        int size,
+        int total,
+        int totalPages
 ) {
 }

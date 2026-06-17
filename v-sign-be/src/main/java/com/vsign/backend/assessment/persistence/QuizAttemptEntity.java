@@ -87,6 +87,14 @@ public class QuizAttemptEntity {
         return timedOut;
     }
 
+    public int getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public OffsetDateTime getSubmittedAt() {
+        return submittedAt;
+    }
+
     public void submit(int score, boolean passed, int durationSeconds, boolean timedOut) {
         this.submitted = true;
         this.score = score;

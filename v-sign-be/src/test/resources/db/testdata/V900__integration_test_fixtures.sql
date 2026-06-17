@@ -9,6 +9,22 @@ values
     (5, 'Market', 'place', 'TRUNG_BINH', 2, 'Market place', 'https://media.example.invalid/market.mp4', 'https://media.example.invalid/market.jpg', true),
     (6, 'Emergency', 'safety', 'NANG_CAO', 3, 'Advanced safety sign', 'https://media.example.invalid/emergency.mp4', 'https://media.example.invalid/emergency.jpg', true);
 
+insert into users
+(id, email, password_hash, full_name, avatar_url, account_type, role, is_active, current_streak, longest_streak, total_xp, created_at, updated_at, last_seen_at)
+values
+('00000000-0000-0000-0000-000000000101', 'learner.basic@vsign.test', null, 'Learner Basic', null, 'BASIC', 'USER', true, 0, 0, 0, '2026-05-01T08:00:00+07:00', '2026-05-01T08:00:00+07:00', '2026-05-10T08:00:00+07:00'),
+('00000000-0000-0000-0000-000000000102', 'learner.premium@vsign.test', null, 'Learner Premium', null, 'PREMIUM', 'USER', true, 3, 7, 420, '2026-05-03T08:00:00+07:00', '2026-05-03T08:00:00+07:00', '2026-05-11T08:00:00+07:00'),
+('00000000-0000-0000-0000-000000000901', 'admin@vsign.test', null, 'V-Sign Admin', null, 'BASIC', 'ADMIN', true, 0, 0, 0, '2026-04-20T08:00:00+07:00', '2026-04-20T08:00:00+07:00', '2026-05-12T08:00:00+07:00'),
+('00000000-0000-0000-0000-000000000902', 'superadmin@vsign.test', null, 'V-Sign Super Admin', null, 'BASIC', 'SUPER_ADMIN', true, 0, 0, 0, '2026-04-19T08:00:00+07:00', '2026-04-19T08:00:00+07:00', '2026-05-12T08:00:00+07:00'),
+('00000000-0000-0000-0000-000000000903', 'reviewer@vsign.test', null, 'Content Reviewer', null, 'BASIC', 'CONTENT_REVIEWER', true, 0, 0, 0, '2026-04-22T08:00:00+07:00', '2026-04-22T08:00:00+07:00', null),
+('00000000-0000-0000-0000-000000000103', 'inactive@vsign.test', null, 'Inactive Learner', null, 'BASIC', 'USER', false, 0, 0, 0, '2026-04-25T08:00:00+07:00', '2026-04-25T08:00:00+07:00', null);
+
+insert into user_usage_daily
+(user_email, activity_date, active_seconds, lesson_completions, ai_attempts, quiz_attempts, last_seen_at)
+values
+('learner.basic@vsign.test', '2026-05-10', 900, 1, 2, 1, '2026-05-10T08:00:00+07:00'),
+('learner.premium@vsign.test', '2026-05-11', 1800, 2, 3, 2, '2026-05-11T08:00:00+07:00');
+
 insert into gamification_profiles (email, user_id, full_name, total_xp, current_streak, longest_streak) values
 ('learner.one@vsign.test', 'learner-001', 'Learner One', 320, 4, 7),
 ('learner.two@vsign.test', 'learner-002', 'Learner Two', 280, 2, 3),

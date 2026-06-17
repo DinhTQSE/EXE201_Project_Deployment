@@ -42,7 +42,66 @@ class AdminControllerIT {
                         .header(HttpHeaders.AUTHORIZATION, bearer("admin@vsign.test", "ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.users.length()").value(2));
+                .andExpect(jsonPath("$.data.users.length()").value(2))
+                .andExpect(jsonPath("$.data.total").value(2))
+                .andExpect(jsonPath("$.data.users[0].email").exists());
+    }
+
+    @Test
+    void loadsAndUpdatesRealUserWithAuditLog() throws Exception {
+        String learnerId = "00000000-0000-0000-0000-000000000101";
+
+        mockMvc.perform(get("/api/v1/admin/users/{userId}", learnerId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer("admin@vsign.test", "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.user.email").value("learner.basic@vsign.test"))
+                .andExpect(jsonPath("$.data.activity.activeSeconds").value(900));
+
+        mockMvc.perform(patch("/api/v1/admin/users/{userId}", learnerId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer("admin@vsign.test", "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "displayName": "Learner Basic Updated",
+                                  "accountType": "PREMIUM",
+                                  "reason": "Support account correction"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.user.displayName").value("Learner Basic Updated"))
+                .andExpect(jsonPath("$.data.user.accountType").value("PREMIUM"));
+
+        mockMvc.perform(get("/api/v1/admin/audit-logs")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("admin@vsign.test", "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.action == 'USER_UPDATED')]").exists());
+    }
+
+    @Test
+    void blocksAdminRoleChangeAndSelfDisable() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/users/00000000-0000-0000-0000-000000000101")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("admin@vsign.test", "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "role": "ADMIN",
+                                  "reason": "Role escalation attempt"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(patch("/api/v1/admin/users/00000000-0000-0000-0000-000000000901")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("admin@vsign.test", "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "active": false,
+                                  "reason": "Self disable attempt"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     @Test
@@ -110,6 +169,20 @@ class AdminControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.successfulTransactions").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)))
                 .andExpect(jsonPath("$.data.totalRevenueVnd").value(org.hamcrest.Matchers.greaterThanOrEqualTo(199000)));
+    }
+
+    @Test
+    void returnsAdminMetricsOverview() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/metrics/overview")
+                        .param("fromDate", "2026-05-01")
+                        .param("toDate", "2026-05-31")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("admin@vsign.test", "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalUsers").value(6))
+                .andExpect(jsonPath("$.data.activeUsers").value(5))
+                .andExpect(jsonPath("$.data.premiumUsers").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.data.activeUsersInRange").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)))
+                .andExpect(jsonPath("$.data.averageActiveSeconds").value(org.hamcrest.Matchers.greaterThanOrEqualTo(600)));
     }
 
     private String bearer(String email, String role) {

@@ -5,6 +5,8 @@ import com.vsign.backend.common.exception.BusinessException;
 import com.vsign.backend.common.exception.ErrorCode;
 import com.vsign.backend.learning.dto.AiLandmarkPredictionRequest;
 import com.vsign.backend.learning.dto.AiLandmarkPredictionResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +19,8 @@ import java.time.Duration;
 
 @Service
 public class AiPredictionProxyService {
+    private static final Logger log = LoggerFactory.getLogger(AiPredictionProxyService.class);
+
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final String aiServiceBaseUrl;
@@ -31,6 +35,7 @@ public class AiPredictionProxyService {
         this.aiServiceBaseUrl = aiServiceBaseUrl;
         this.predictTimeout = Duration.ofMillis(predictTimeoutMs);
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(3))
                 .build();
     }
@@ -48,14 +53,19 @@ public class AiPredictionProxyService {
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 return objectMapper.readValue(response.body(), AiLandmarkPredictionResponse.class);
             }
-            if (response.statusCode() == 400 || response.statusCode() == 413) {
+
+            String responseBody = response.body() == null ? "" : response.body();
+            if (response.statusCode() == 400 || response.statusCode() == 413 || response.statusCode() == 422) {
+                log.warn("AI prediction request rejected with status {}: {}", response.statusCode(), truncate(responseBody));
                 throw new BusinessException(ErrorCode.INVALID_REQUEST, "AI prediction request rejected");
             }
+            log.warn("AI service returned status {}: {}", response.statusCode(), truncate(responseBody));
             throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE, "AI service is unavailable");
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE, "AI service request was interrupted");
         } catch (IOException | IllegalArgumentException exception) {
+            log.warn("AI service call failed: {}", exception.toString());
             throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE, "AI service is unavailable");
         }
     }
@@ -65,5 +75,12 @@ public class AiPredictionProxyService {
                 ? aiServiceBaseUrl.substring(0, aiServiceBaseUrl.length() - 1)
                 : aiServiceBaseUrl;
         return URI.create(normalizedBaseUrl + "/predict-landmarks");
+    }
+
+    private static String truncate(String value) {
+        if (value == null || value.isBlank()) {
+            return "<empty>";
+        }
+        return value.length() <= 500 ? value : value.substring(0, 500) + "...";
     }
 }

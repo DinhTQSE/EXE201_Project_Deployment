@@ -7,6 +7,10 @@ public record AdminUserResponse(
         String role,
         String status,
         String accountType,
-        String createdAt
+        String createdAt,
+        String updatedAt,
+        String lastSeenAt,
+        int totalXp,
+        int currentStreak
 ) {
 }
