@@ -2,6 +2,7 @@ package com.vsign.backend.payment.service;
 
 import com.vsign.backend.auth.persistence.UserEntity;
 import com.vsign.backend.auth.persistence.UserRepository;
+import com.vsign.backend.common.mail.EmailService;
 import com.vsign.backend.payment.config.PayOSConfig;
 import com.vsign.backend.payment.dto.*;
 import com.vsign.backend.payment.persistence.*;
@@ -34,6 +35,7 @@ public class PayOSPaymentService {
     private final UserTierRepository userTierRepository;
     private final PayOS payOS;
     private final PayOSConfig payOSConfig;
+    private final EmailService emailService;
 
     @Transactional
     public CreatePaymentResponse createPayOSCheckout(String userEmail, CreatePaymentRequest request) {
@@ -185,6 +187,16 @@ public class PayOSPaymentService {
         userTier.setEndTime(LocalDateTime.now().plusMonths(order.getTier().getNoMonth()));
         userTier.setIsActive(true);
         userTierRepository.save(userTier);
+
+        emailService.sendPaymentSuccessEmail(
+                order.getUser().getEmail(),
+                order.getUser().getFullName(),
+                order.getTier().getTitle(),
+                order.getAmount(),
+                order.getOrderCode(),
+                userTier.getStartTime(),
+                userTier.getEndTime()
+        );
     }
 
     private PaymentOrderStatus resolveReturnStatus(PayOSReturnRequest req) {

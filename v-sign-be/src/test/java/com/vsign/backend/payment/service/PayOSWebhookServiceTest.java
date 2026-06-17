@@ -1,6 +1,7 @@
 package com.vsign.backend.payment.service;
 
 import com.vsign.backend.auth.persistence.UserEntity;
+import com.vsign.backend.common.mail.EmailService;
 import com.vsign.backend.payment.persistence.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +23,7 @@ class PayOSWebhookServiceTest {
     @Mock PayOSOrderRepository orderRepository;
     @Mock PayOSTransactionRepository transactionRepository;
     @Mock UserTierRepository userTierRepository;
+    @Mock EmailService emailService;
 
     @InjectMocks PayOSWebhookService service;
 
