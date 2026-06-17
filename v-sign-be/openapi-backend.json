@@ -1,12 +1,16 @@
 {
   "openapi" : "3.0.1",
   "info" : {
-    "title" : "OpenAPI definition",
-    "version" : "v0"
+    "title" : "V-Sign API",
+    "description" : "V-Sign Backend API Documentation",
+    "version" : "1.0"
   },
   "servers" : [ {
     "url" : "http://localhost",
     "description" : "Generated server url"
+  } ],
+  "security" : [ {
+    "bearerAuth" : [ ]
   } ],
   "paths" : {
     "/api/v1/lessons/{lessonId}/progress" : {
@@ -66,6 +70,34 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SuccessResponseCheckoutIntentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/signature-workflows/predict-landmarks" : {
+      "post" : {
+        "tags" : [ "signature-workflow-controller" ],
+        "operationId" : "predictLandmarks",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AiLandmarkPredictionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAiLandmarkPredictionResponse"
                 }
               }
             }
@@ -137,6 +169,78 @@
         }
       }
     },
+    "/api/v1/payments/payos/webhook" : {
+      "get" : {
+        "tags" : [ "pay-os-webhook-controller" ],
+        "operationId" : "ping",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "pay-os-webhook-controller" ],
+        "operationId" : "webhook",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Webhook"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/payos/return" : {
+      "post" : {
+        "tags" : [ "pay-os-payment-controller" ],
+        "operationId" : "payosReturn",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PayOSReturnRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PayOSReturnResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/payments/orders" : {
       "post" : {
         "tags" : [ "payment-controller" ],
@@ -165,6 +269,34 @@
         }
       }
     },
+    "/api/v1/payments/checkout" : {
+      "post" : {
+        "tags" : [ "pay-os-payment-controller" ],
+        "operationId" : "checkout_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreatePaymentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatePaymentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/change-password" : {
       "post" : {
         "tags" : [ "profile-controller" ],
@@ -186,6 +318,59 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SuccessResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/activity/heartbeat" : {
+      "post" : {
+        "tags" : [ "user-activity-controller" ],
+        "operationId" : "heartbeat",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ActivityHeartbeatRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/lessons/{lessonId}/complete" : {
+      "post" : {
+        "tags" : [ "learning-catalog-controller" ],
+        "operationId" : "completeLesson",
+        "parameters" : [ {
+          "name" : "lessonId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseProgressResponse"
                 }
               }
             }
@@ -369,6 +554,97 @@
         }
       }
     },
+    "/api/v1/admin/users/{userId}" : {
+      "get" : {
+        "tags" : [ "admin-user-controller" ],
+        "operationId" : "getUser",
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminUserDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "admin-user-controller" ],
+        "operationId" : "deactivateUser",
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminUserDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "admin-user-controller" ],
+        "operationId" : "updateUser",
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminUserUpdateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminUserDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/payments/{transactionId}" : {
       "patch" : {
         "tags" : [ "admin-payment-controller" ],
@@ -434,6 +710,24 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SuccessResponseReviewQueueItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/version" : {
+      "get" : {
+        "tags" : [ "health-controller" ],
+        "operationId" : "version",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseVersionResponse"
                 }
               }
             }
@@ -596,6 +890,48 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SuccessResponsePaymentStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/tiers" : {
+      "get" : {
+        "tags" : [ "pay-os-payment-controller" ],
+        "operationId" : "tiers",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TierResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/me" : {
+      "get" : {
+        "tags" : [ "pay-os-payment-controller" ],
+        "operationId" : "myHistory",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PaymentHistoryResponse"
+                  }
                 }
               }
             }
@@ -838,6 +1174,24 @@
         }
       }
     },
+    "/api/v1/health" : {
+      "get" : {
+        "tags" : [ "health-controller" ],
+        "operationId" : "health",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/gamification/summary" : {
       "get" : {
         "tags" : [ "gamification-controller" ],
@@ -1022,6 +1376,13 @@
         "tags" : [ "admin-user-controller" ],
         "operationId" : "listUsers",
         "parameters" : [ {
+          "name" : "search",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
           "name" : "role",
           "in" : "query",
           "required" : false,
@@ -1035,6 +1396,24 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
         } ],
         "responses" : {
           "200" : {
@@ -1043,6 +1422,32 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SuccessResponseAdminUserListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{userId}/activity" : {
+      "get" : {
+        "tags" : [ "admin-user-controller" ],
+        "operationId" : "getUserActivity",
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminUserDetailResponse"
                 }
               }
             }
@@ -1080,6 +1485,84 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SuccessResponseAdminPaymentPageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metrics/usage" : {
+      "get" : {
+        "tags" : [ "admin-metrics-controller" ],
+        "operationId" : "usage",
+        "parameters" : [ {
+          "name" : "fromDate",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }, {
+          "name" : "toDate",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }, {
+          "name" : "granularity",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "daily"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminUsageMetricsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/metrics/overview" : {
+      "get" : {
+        "tags" : [ "admin-metrics-controller" ],
+        "operationId" : "overview",
+        "parameters" : [ {
+          "name" : "fromDate",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }, {
+          "name" : "toDate",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SuccessResponseAdminMetricsOverviewResponse"
                 }
               }
             }
@@ -1285,6 +1768,105 @@
           }
         }
       },
+      "AiLandmarkPredictionRequest" : {
+        "required" : [ "sequence" ],
+        "type" : "object",
+        "properties" : {
+          "sequence" : {
+            "maxItems" : 120,
+            "minItems" : 5,
+            "type" : "array",
+            "items" : {
+              "type" : "array",
+              "items" : {
+                "type" : "number",
+                "format" : "double"
+              }
+            }
+          },
+          "targetGloss" : {
+            "type" : "string"
+          },
+          "hands_detected_frames" : {
+            "maximum" : 120,
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "AiLandmarkPredictionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "confidence" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "top3" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AiPredictionCandidateResponse"
+            }
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "frames_processed" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "hands_detected_frames" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "inference_ms" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "model_version" : {
+            "type" : "string"
+          },
+          "label_version" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AiPredictionCandidateResponse" : {
+        "type" : "object",
+        "properties" : {
+          "label" : {
+            "type" : "string"
+          },
+          "confidence" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
+      },
+      "SuccessResponseAiLandmarkPredictionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AiLandmarkPredictionResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
       "SubmitSignatureAttemptRequest" : {
         "required" : [ "practiceItemId", "signatureVector" ],
         "type" : "object",
@@ -1305,6 +1887,48 @@
             "minimum" : 1,
             "type" : "integer",
             "format" : "int64"
+          },
+          "aiStatus" : {
+            "type" : "string"
+          },
+          "targetGloss" : {
+            "type" : "string"
+          },
+          "predictedGloss" : {
+            "type" : "string"
+          },
+          "confidence" : {
+            "maximum" : 1.0,
+            "exclusiveMaximum" : false,
+            "minimum" : 0.0,
+            "exclusiveMinimum" : false,
+            "type" : "number",
+            "format" : "double"
+          },
+          "correct" : {
+            "type" : "boolean"
+          },
+          "framesProcessed" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "handsDetectedFrames" : {
+            "minimum" : 0,
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "inferenceMs" : {
+            "minimum" : 0.0,
+            "exclusiveMinimum" : false,
+            "type" : "number",
+            "format" : "double"
+          },
+          "modelVersion" : {
+            "type" : "string"
+          },
+          "labelVersion" : {
+            "type" : "string"
           }
         }
       },
@@ -1323,6 +1947,19 @@
           "score" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "targetGloss" : {
+            "type" : "string"
+          },
+          "predictedGloss" : {
+            "type" : "string"
+          },
+          "confidence" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "correct" : {
+            "type" : "boolean"
           },
           "feedbackCodes" : {
             "type" : "array",
@@ -1425,6 +2062,117 @@
           }
         }
       },
+      "Webhook" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "desc" : {
+            "type" : "string"
+          },
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/WebhookData"
+          },
+          "signature" : {
+            "type" : "string"
+          }
+        }
+      },
+      "WebhookData" : {
+        "type" : "object",
+        "properties" : {
+          "orderCode" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "accountNumber" : {
+            "type" : "string"
+          },
+          "reference" : {
+            "type" : "string"
+          },
+          "transactionDateTime" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "paymentLinkId" : {
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "desc" : {
+            "type" : "string"
+          },
+          "counterAccountBankId" : {
+            "type" : "string"
+          },
+          "counterAccountBankName" : {
+            "type" : "string"
+          },
+          "counterAccountName" : {
+            "type" : "string"
+          },
+          "counterAccountNumber" : {
+            "type" : "string"
+          },
+          "virtualAccountName" : {
+            "type" : "string"
+          },
+          "virtualAccountNumber" : {
+            "type" : "string"
+          }
+        }
+      },
+      "PayOSReturnRequest" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "cancel" : {
+            "type" : "boolean"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "orderCode" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "PayOSReturnResponse" : {
+        "type" : "object",
+        "properties" : {
+          "orderCode" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "resolvedStatus" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          }
+        }
+      },
       "CreatePaymentOrderRequest" : {
         "required" : [ "provider" ],
         "type" : "object",
@@ -1511,6 +2259,46 @@
           }
         }
       },
+      "CreatePaymentRequest" : {
+        "required" : [ "tierId" ],
+        "type" : "object",
+        "properties" : {
+          "tierId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "CreatePaymentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "orderId" : {
+            "type" : "string"
+          },
+          "orderCode" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "paymentLinkId" : {
+            "type" : "string"
+          },
+          "checkoutUrl" : {
+            "type" : "string"
+          },
+          "qrCode" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "expiredAt" : {
+            "type" : "string"
+          }
+        }
+      },
       "ChangePasswordRequest" : {
         "required" : [ "currentPassword", "newPassword" ],
         "type" : "object",
@@ -1540,6 +2328,17 @@
           "timestamp" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "ActivityHeartbeatRequest" : {
+        "type" : "object",
+        "properties" : {
+          "activeSeconds" : {
+            "maximum" : 120,
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -1596,6 +2395,14 @@
             "format" : "int32"
           },
           "xpAwarded" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currentStreak" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "longestStreak" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -1914,6 +2721,127 @@
           }
         }
       },
+      "AdminUserUpdateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "displayName" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "accountType" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "maxLength" : 500,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        }
+      },
+      "AdminUserActivityResponse" : {
+        "type" : "object",
+        "properties" : {
+          "activeSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "completedLessons" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "quizAttempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "aiAttempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "aiPassedAttempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lastSeenAt" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AdminUserDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "user" : {
+            "$ref" : "#/components/schemas/AdminUserResponse"
+          },
+          "activity" : {
+            "$ref" : "#/components/schemas/AdminUserActivityResponse"
+          }
+        }
+      },
+      "AdminUserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "accountType" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string"
+          },
+          "lastSeenAt" : {
+            "type" : "string"
+          },
+          "totalXp" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currentStreak" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseAdminUserDetailResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AdminUserDetailResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
       "ManualPaymentStatusRequest" : {
         "required" : [ "reason", "status" ],
         "type" : "object",
@@ -2046,6 +2974,35 @@
           }
         }
       },
+      "SuccessResponseVersionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/VersionResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "VersionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "service" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        }
+      },
       "SuccessResponseUnitListResponse" : {
         "type" : "object",
         "properties" : {
@@ -2100,6 +3057,9 @@
           "title" : {
             "type" : "string"
           },
+          "description" : {
+            "type" : "string"
+          },
           "thumbnailUrl" : {
             "type" : "string"
           },
@@ -2134,6 +3094,9 @@
             "type" : "string"
           },
           "title" : {
+            "type" : "string"
+          },
+          "description" : {
             "type" : "string"
           },
           "lessonCount" : {
@@ -2337,6 +3300,69 @@
           }
         }
       },
+      "TierResponse" : {
+        "type" : "object",
+        "properties" : {
+          "tierId" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "noMonth" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "limitedToken" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "isActive" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PaymentHistoryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "orderId" : {
+            "type" : "string"
+          },
+          "orderCode" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "tierId" : {
+            "type" : "string"
+          },
+          "tierTitle" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "paymentLinkId" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "paidAt" : {
+            "type" : "string"
+          },
+          "expiredAt" : {
+            "type" : "string"
+          }
+        }
+      },
       "SuccessResponseSubscriptionSummaryResponse" : {
         "type" : "object",
         "properties" : {
@@ -2445,6 +3471,9 @@
           },
           "text" : {
             "type" : "string"
+          },
+          "videoUrl" : {
+            "type" : "string"
           }
         }
       },
@@ -2515,6 +3544,9 @@
           "lessonId" : {
             "type" : "string"
           },
+          "label" : {
+            "type" : "string"
+          },
           "category" : {
             "type" : "string"
           },
@@ -2522,6 +3554,12 @@
             "type" : "string"
           },
           "expectedGloss" : {
+            "type" : "string"
+          },
+          "sourceVideoFile" : {
+            "type" : "string"
+          },
+          "videoUrl" : {
             "type" : "string"
           }
         }
@@ -2580,6 +3618,9 @@
           "lessonId" : {
             "type" : "string"
           },
+          "label" : {
+            "type" : "string"
+          },
           "category" : {
             "type" : "string"
           },
@@ -2587,6 +3628,12 @@
             "type" : "string"
           },
           "expectedGloss" : {
+            "type" : "string"
+          },
+          "sourceVideoFile" : {
+            "type" : "string"
+          },
+          "videoUrl" : {
             "type" : "string"
           },
           "rubric" : {
@@ -2674,6 +3721,39 @@
           },
           "data" : {
             "$ref" : "#/components/schemas/LeaderboardResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "HealthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "checkedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "SuccessResponseHealthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/HealthResponse"
           },
           "timestamp" : {
             "type" : "string",
@@ -2903,6 +3983,12 @@
           "title" : {
             "type" : "string"
           },
+          "description" : {
+            "type" : "string"
+          },
+          "videoUrl" : {
+            "type" : "string"
+          },
           "durationSeconds" : {
             "type" : "integer",
             "format" : "int32"
@@ -3028,35 +4114,21 @@
               "$ref" : "#/components/schemas/AdminUserResponse"
             }
           },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "total" : {
             "type" : "integer",
             "format" : "int32"
-          }
-        }
-      },
-      "AdminUserResponse" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string"
           },
-          "email" : {
-            "type" : "string"
-          },
-          "displayName" : {
-            "type" : "string"
-          },
-          "role" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "accountType" : {
-            "type" : "string"
-          },
-          "createdAt" : {
-            "type" : "string"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -3116,6 +4188,158 @@
           },
           "data" : {
             "$ref" : "#/components/schemas/AdminPaymentPageResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AdminUsageMetricsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "granularity" : {
+            "type" : "string"
+          },
+          "points" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminUsagePointResponse"
+            }
+          }
+        }
+      },
+      "AdminUsagePointResponse" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "type" : "string"
+          },
+          "activeSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lessonCompletions" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "quizAttempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "aiAttempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseAdminUsageMetricsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AdminUsageMetricsResponse"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AdminMetricsOverviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalUsers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "newUsers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "activeUsers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "activeUsersInRange" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "premiumUsers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalRevenueVnd" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "successfulPayments" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pendingReviews" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lessonCompletions" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "quizAttempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "aiAttempts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "aiSuccessRate" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "averageActiveSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "topActiveUsers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminTopUserResponse"
+            }
+          }
+        }
+      },
+      "AdminTopUserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "activeSeconds" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "SuccessResponseAdminMetricsOverviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AdminMetricsOverviewResponse"
           },
           "timestamp" : {
             "type" : "string",
@@ -3245,6 +4469,14 @@
             "format" : "date-time"
           }
         }
+      }
+    },
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "type" : "http",
+        "name" : "bearerAuth",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT"
       }
     }
   }
