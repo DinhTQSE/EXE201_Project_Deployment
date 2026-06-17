@@ -6,6 +6,7 @@ import com.vsign.backend.payment.config.PayOSConfig;
 import com.vsign.backend.payment.dto.*;
 import com.vsign.backend.payment.persistence.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
@@ -21,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -155,11 +157,34 @@ public class PayOSPaymentService {
         }
 
         PaymentOrderStatus finalStatus = resolved != null ? resolved : current;
+        if (finalStatus == PaymentOrderStatus.PAID) {
+            upgradeUserTier(order);
+        }
         return PayOSReturnResponse.builder()
                 .orderCode(order.getOrderCode())
                 .resolvedStatus(finalStatus.name())
                 .message("OK")
                 .build();
+    }
+
+    private void upgradeUserTier(PayOSOrderEntity order) {
+        var userId = order.getUser().getId();
+        List<UserTierEntity> existing = userTierRepository
+                .findCurrentActiveByUserIdForUpdate(userId, LocalDateTime.now());
+
+        boolean hasPaid = existing.stream().anyMatch(ut -> ut.getTier().getAmount() > 0);
+        if (hasPaid) {
+            log.info("User {} already has active paid subscription, skipping upgrade", userId);
+            return;
+        }
+
+        UserTierEntity userTier = new UserTierEntity();
+        userTier.setUser(order.getUser());
+        userTier.setTier(order.getTier());
+        userTier.setStartTime(LocalDateTime.now());
+        userTier.setEndTime(LocalDateTime.now().plusMonths(order.getTier().getNoMonth()));
+        userTier.setIsActive(true);
+        userTierRepository.save(userTier);
     }
 
     private PaymentOrderStatus resolveReturnStatus(PayOSReturnRequest req) {

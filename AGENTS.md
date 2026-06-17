@@ -344,6 +344,7 @@ powershell -ExecutionPolicy Bypass -File v-sign-be\scripts\scan-predeploy-marker
 ## Git And Editing Safety
 
 - Check `git status --short` before broad edits.
+- Absolutely do not run `git push` commands. The user must manually review and push the code themselves.
 - The worktree may be dirty; do not revert user changes.
 - Do not use `git reset --hard` or destructive checkout commands unless explicitly requested.
 - Keep edits scoped to the requested feature.
