@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "run subagent to verify new tools that's if it's suitable for the project before running"
+    ]
+  }
+}

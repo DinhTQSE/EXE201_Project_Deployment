@@ -21,6 +21,10 @@ public class PayOSWebhookService {
 
     @Transactional
     public void handlePayOSWebhook(WebhookData data) {
+        if (data.getOrderCode() == 123) {
+            log.info("PayOS test webhook received successfully");
+            return;
+        }
         switch (data.getCode()) {
             case "00" -> handlePaid(data);
             case "01" -> handleCancelled(data);

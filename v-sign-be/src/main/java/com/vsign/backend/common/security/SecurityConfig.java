@@ -53,6 +53,12 @@ public class SecurityConfig {
                                 writeError(response, ErrorCode.FORBIDDEN)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers(
+                                "/api/v1/swagger-ui/**",
+                                "/api/v1/api-docs/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/health", "/api/v1/version").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/dictionary/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/learning/practice-items/**").permitAll()
