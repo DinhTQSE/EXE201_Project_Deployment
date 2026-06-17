@@ -1,4 +1,4 @@
--- V23: PayOS tier subscription tables
+ -- V23: PayOS tier subscription tables
 
 CREATE TABLE IF NOT EXISTS tier (
     tier_id       UUID        PRIMARY KEY,
