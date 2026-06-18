@@ -37,12 +37,18 @@ import com.vsign.backend.learning.persistence.PracticeItemRubricRepository;
 import com.vsign.backend.learning.persistence.SignatureAttemptLogEntity;
 import com.vsign.backend.learning.persistence.SignatureAttemptLogRepository;
 import com.vsign.backend.monetization.persistence.UserSubscriptionRepository;
+import com.vsign.backend.payment.persistence.UserTierRepository;
+import com.vsign.backend.payment.persistence.UserTierEntity;
+import com.vsign.backend.payment.persistence.TierFeatureRepository;
+import com.vsign.backend.payment.persistence.TierFeatureEntity;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HexFormat;
@@ -83,6 +89,8 @@ public class LearningWorkflowService {
     private final LessonProgressRepository progressRepository;
     private final SignatureAttemptLogRepository signatureAttemptLogRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    private final UserTierRepository userTierRepository;
+    private final TierFeatureRepository tierFeatureRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final QuizRepository quizRepository;
     private final GamificationService gamificationService;
@@ -97,6 +105,8 @@ public class LearningWorkflowService {
             LessonProgressRepository progressRepository,
             SignatureAttemptLogRepository signatureAttemptLogRepository,
             UserSubscriptionRepository userSubscriptionRepository,
+            UserTierRepository userTierRepository,
+            TierFeatureRepository tierFeatureRepository,
             QuizAttemptRepository quizAttemptRepository,
             QuizRepository quizRepository,
             GamificationService gamificationService
@@ -109,10 +119,13 @@ public class LearningWorkflowService {
         this.progressRepository = progressRepository;
         this.signatureAttemptLogRepository = signatureAttemptLogRepository;
         this.userSubscriptionRepository = userSubscriptionRepository;
+        this.userTierRepository = userTierRepository;
+        this.tierFeatureRepository = tierFeatureRepository;
         this.quizAttemptRepository = quizAttemptRepository;
         this.quizRepository = quizRepository;
         this.gamificationService = gamificationService;
     }
+
 
     public PracticeItemsPageResponse listPracticeItems(String category, String level, int page, int size) {
         String normalizedCategory = normalize(category);
@@ -153,6 +166,33 @@ public class LearningWorkflowService {
         rejectRawAiPayload(request);
         String userKey = requireAuthenticatedUser();
         enforceSignatureAttemptRateLimit(userKey);
+
+        if ("STANDALONE-AI-RECOGNITION".equals(request.userStoryId())) {
+            if (!isFeatureEnabled("standalone_ai")) {
+                throw new BusinessException(ErrorCode.PREMIUM_REQUIRED, "Standalone AI Recognition requires a Pro subscription");
+            }
+        }
+
+        List<UserTierEntity> activeTiers = userTierRepository.findCurrentActiveByEmail(userKey, LocalDateTime.now());
+        UserTierEntity activeTier = activeTiers.isEmpty() ? null : activeTiers.get(0);
+        String tierTitle = activeTier == null ? "FREE" : activeTier.getTier().getTitle().toUpperCase();
+        int maxLimit = activeTier == null ? 20 : activeTier.getTier().getLimitedToken();
+
+        OffsetDateTime start = OffsetDateTime.now()
+                .withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+        if (activeTier != null && !"FREE".equals(tierTitle)) {
+            start = activeTier.getStartTime().atZone(java.time.ZoneId.systemDefault()).toOffsetDateTime();
+        }
+
+        long currentUsage = signatureAttemptLogRepository.countByUserKeyAndCreatedAtAfter(userKey, start);
+        if (currentUsage >= maxLimit) {
+            throw new BusinessException(ErrorCode.RATE_LIMITED, "Bạn đã hết lượt nhận diện AI cho kỳ này (" + maxLimit + " lượt)");
+        }
+
         PracticeItemEntity practiceItem = practiceItemRepository.findByPracticeItemIdAndPublishedTrue(request.practiceItemId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         String attemptId = "attempt-" + UUID.randomUUID();
@@ -189,6 +229,21 @@ public class LearningWorkflowService {
                 score,
                 String.join(",", feedbackCodes)
         ));
+
+        int newUsage = (int) currentUsage + 1;
+        int remaining = maxLimit - newUsage;
+        String warningMessage = null;
+
+        if (remaining >= 0) {
+            if ("FREE".equals(tierTitle) && remaining <= 5) {
+                warningMessage = "Bạn chỉ còn " + remaining + " lượt nhận diện AI trong tháng này.";
+            } else if ("PLUS".equals(tierTitle) && remaining <= 50) {
+                warningMessage = "Bạn chỉ còn " + remaining + " lượt nhận diện AI trong kỳ này.";
+            } else if ("PRO".equals(tierTitle) && remaining <= 100) {
+                warningMessage = "Tài khoản Pro của bạn chỉ còn " + remaining + " lượt nhận diện AI cho kỳ này.";
+            }
+        }
+
         return new SignatureAttemptResponse(
                 attemptId,
                 request.practiceItemId(),
@@ -198,7 +253,10 @@ public class LearningWorkflowService {
                 predictedGloss,
                 request.confidence(),
                 correct,
-                feedbackCodes
+                feedbackCodes,
+                newUsage,
+                maxLimit,
+                warningMessage
         );
     }
 
@@ -233,11 +291,14 @@ public class LearningWorkflowService {
 
         String userKey = currentUserKey();
         boolean premiumUser = isPremiumUser();
+        int chapterLimit = getFeatureLimit("chapter_access");
 
         List<LearningChapterEntity> chapterEntities =
                 chapterRepository.findByUnitIdAndPublishedTrueOrderByOrderIndexAsc(unitId);
         List<String> chapterIds = chapterEntities.stream()
                 .map(LearningChapterEntity::getChapterId).toList();
+
+        String firstChapterId = chapterEntities.isEmpty() ? null : chapterEntities.get(0).getChapterId();
 
         // Batch lesson counts (1 query instead of N)
         Map<String, Long> lessonCountByChapter = lessonRepository.countPublishedByChapterIdIn(chapterIds).stream()
@@ -256,6 +317,8 @@ public class LearningWorkflowService {
                 .map(chapter -> {
                     List<LearningLessonEntity> chLessons =
                             lessonsByChapter.getOrDefault(chapter.getChapterId(), List.of());
+                    boolean isFirst = chapter.getChapterId().equals(firstChapterId);
+                    boolean locked = (chapterLimit == 1 && !isFirst) || (chapter.isPremium() && !premiumUser);
                     return new ChapterSummaryResponse(
                             chapter.getChapterId(),
                             chapter.getTitle(),
@@ -263,7 +326,7 @@ public class LearningWorkflowService {
                             lessonCountByChapter.getOrDefault(chapter.getChapterId(), 0L).intValue(),
                             chapter.getOrderIndex(),
                             chapter.isPremium(),
-                            chapter.isPremium() && !premiumUser,
+                            locked,
                             computeCompletionPercent(chLessons, progressByLesson)
                     );
                 })
@@ -278,12 +341,18 @@ public class LearningWorkflowService {
 
         String userKey = currentUserKey();
         boolean premiumUser = isPremiumUser();
+        List<LearningChapterEntity> chaptersInUnit = chapterRepository.findByUnitIdAndPublishedTrueOrderByOrderIndexAsc(chapter.getUnitId());
+        String firstChapterId = chaptersInUnit.isEmpty() ? null : chaptersInUnit.get(0).getChapterId();
+        boolean isFirstChapter = chapterId.equals(firstChapterId);
+        int chapterLimit = getFeatureLimit("chapter_access");
+        boolean chapterLockedForFree = (chapterLimit == 1 && !isFirstChapter);
+
         List<LearningLessonEntity> lessons = lessonRepository.findByChapterIdAndPublishedTrueOrderByOrderIndexAsc(chapterId);
         Map<String, LessonProgressEntity> progressByLesson = progressByLesson(userKey, lessons);
 
         List<LessonSummaryResponse> responses = new java.util.ArrayList<>();
         for (LearningLessonEntity lesson : lessons) {
-            boolean requiresPremium = chapter.isPremium() || lesson.isPremium();
+            boolean requiresPremium = chapter.isPremium() || lesson.isPremium() || chapterLockedForFree;
             LessonProgressEntity progress = progressByLesson.get(lesson.getLessonId());
             String status = progress == null ? "NOT_STARTED" : progress.getStatus();
             boolean locked = requiresPremium && !premiumUser;
@@ -302,13 +371,28 @@ public class LearningWorkflowService {
         return new LessonListResponse(chapterId, responses);
     }
 
+    private void checkChapterAccess(LearningChapterEntity chapter, boolean premiumUser) {
+        List<LearningChapterEntity> chaptersInUnit = chapterRepository.findByUnitIdAndPublishedTrueOrderByOrderIndexAsc(chapter.getUnitId());
+        String firstChapterId = chaptersInUnit.isEmpty() ? null : chaptersInUnit.get(0).getChapterId();
+        boolean isFirstChapter = chapter.getChapterId().equals(firstChapterId);
+        int chapterLimit = getFeatureLimit("chapter_access");
+        boolean chapterLockedForFree = (chapterLimit == 1 && !isFirstChapter);
+
+        if ((chapter.isPremium() || chapterLockedForFree) && !premiumUser) {
+            throw new BusinessException(ErrorCode.PREMIUM_REQUIRED);
+        }
+    }
+
     public LessonDetailResponse getLesson(String lessonId) {
         LearningLessonEntity lesson = lessonRepository.findByLessonIdAndPublishedTrue(lessonId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
         LearningChapterEntity chapter = chapterRepository.findById(lesson.getChapterId())
                 .filter(LearningChapterEntity::isPublished)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAPTER_NOT_FOUND));
-        if ((chapter.isPremium() || lesson.isPremium()) && !isPremiumUser()) {
+        
+        boolean premiumUser = isPremiumUser();
+        checkChapterAccess(chapter, premiumUser);
+        if (lesson.isPremium() && !premiumUser) {
             throw new BusinessException(ErrorCode.PREMIUM_REQUIRED);
         }
 
@@ -325,7 +409,10 @@ public class LearningWorkflowService {
         LearningChapterEntity chapter = chapterRepository.findById(lesson.getChapterId())
                 .filter(LearningChapterEntity::isPublished)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAPTER_NOT_FOUND));
-        if ((chapter.isPremium() || lesson.isPremium()) && !isPremiumUser()) {
+        
+        boolean premiumUser = isPremiumUser();
+        checkChapterAccess(chapter, premiumUser);
+        if (lesson.isPremium() && !premiumUser) {
             throw new BusinessException(ErrorCode.PREMIUM_REQUIRED);
         }
 
@@ -350,9 +437,13 @@ public class LearningWorkflowService {
         LearningChapterEntity chapter = chapterRepository.findById(lesson.getChapterId())
                 .filter(LearningChapterEntity::isPublished)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAPTER_NOT_FOUND));
-        if ((chapter.isPremium() || lesson.isPremium()) && !isPremiumUser()) {
+        
+        boolean premiumUser = isPremiumUser();
+        checkChapterAccess(chapter, premiumUser);
+        if (lesson.isPremium() && !premiumUser) {
             throw new BusinessException(ErrorCode.PREMIUM_REQUIRED);
         }
+
 
         LessonProgressEntity progress = progressRepository.findByUserKeyAndLessonId(userKey, lessonId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REQUEST, "Lesson video progress is required before completion"));
@@ -473,11 +564,66 @@ public class LearningWorkflowService {
                 && ("ADMIN".equals(principal.role()) || "SUPER_ADMIN".equals(principal.role()))) {
             return true;
         }
-        return userSubscriptionRepository.findById(userKey)
-                .filter(subscription -> "ACTIVE".equals(subscription.getStatus()))
-                .filter(subscription -> subscription.getPlanType() != null && !subscription.getPlanType().isBlank())
-                .filter(subscription -> subscription.getExpiresAt() == null || subscription.getExpiresAt().isAfter(OffsetDateTime.now()))
-                .isPresent();
+        List<UserTierEntity> active = userTierRepository.findCurrentActiveByEmail(userKey, LocalDateTime.now());
+        if (active.isEmpty()) {
+            return false;
+        }
+        String title = active.get(0).getTier().getTitle();
+        return "plus".equalsIgnoreCase(title) || "pro".equalsIgnoreCase(title);
+    }
+
+    private boolean isFeatureEnabled(String featureKey) {
+        String userKey = currentUserKey();
+        if (ANONYMOUS_USER_KEY.equals(userKey)) {
+            return "chapter_access".equals(featureKey);
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtService.Principal principal
+                && ("ADMIN".equals(principal.role()) || "SUPER_ADMIN".equals(principal.role()))) {
+            return true;
+        }
+        
+        String tierTitle = "FREE";
+        List<UserTierEntity> active = userTierRepository.findCurrentActiveByEmail(userKey, LocalDateTime.now());
+        if (!active.isEmpty()) {
+            tierTitle = active.get(0).getTier().getTitle();
+        }
+        
+        List<TierFeatureEntity> features = tierFeatureRepository.findByTier_TitleIgnoreCase(tierTitle);
+        for (TierFeatureEntity feature : features) {
+            if (feature.getFeatureKey().equalsIgnoreCase(featureKey)) {
+                return Boolean.TRUE.equals(feature.getIsEnabled());
+            }
+        }
+        return false;
+    }
+
+    private int getFeatureLimit(String featureKey) {
+        String userKey = currentUserKey();
+        if (ANONYMOUS_USER_KEY.equals(userKey)) {
+            if ("chapter_access".equals(featureKey)) return 1;
+            return 0;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtService.Principal principal
+                && ("ADMIN".equals(principal.role()) || "SUPER_ADMIN".equals(principal.role()))) {
+            return -1;
+        }
+        
+        String tierTitle = "FREE";
+        List<UserTierEntity> active = userTierRepository.findCurrentActiveByEmail(userKey, LocalDateTime.now());
+        if (!active.isEmpty()) {
+            tierTitle = active.get(0).getTier().getTitle();
+        }
+        
+        List<TierFeatureEntity> features = tierFeatureRepository.findByTier_TitleIgnoreCase(tierTitle);
+        for (TierFeatureEntity feature : features) {
+            if (feature.getFeatureKey().equalsIgnoreCase(featureKey)) {
+                return feature.getLimitValue();
+            }
+        }
+        if ("chapter_access".equals(featureKey)) return 1;
+        return 0;
     }
 
     private String normalize(String value) {

@@ -21,7 +21,17 @@ import com.vsign.backend.assessment.persistence.QuizRepository;
 import com.vsign.backend.common.exception.BusinessException;
 import com.vsign.backend.common.exception.ErrorCode;
 import com.vsign.backend.common.security.JwtService;
+import com.vsign.backend.learning.persistence.LearningChapterEntity;
+import com.vsign.backend.learning.persistence.LearningChapterRepository;
+import com.vsign.backend.learning.persistence.LearningLessonEntity;
+import com.vsign.backend.learning.persistence.LearningLessonRepository;
+import com.vsign.backend.payment.persistence.UserTierRepository;
+import com.vsign.backend.payment.persistence.UserTierEntity;
+import com.vsign.backend.payment.persistence.TierFeatureRepository;
+import com.vsign.backend.payment.persistence.TierFeatureEntity;
+import java.time.LocalDateTime;
 import java.util.List;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -41,28 +51,55 @@ public class QuizAttemptService {
     private final QuizOptionRepository optionRepository;
     private final QuizAttemptRepository attemptRepository;
     private final QuizAttemptAnswerRepository attemptAnswerRepository;
+    private final LearningLessonRepository lessonRepository;
+    private final LearningChapterRepository chapterRepository;
+    private final UserTierRepository userTierRepository;
+    private final TierFeatureRepository tierFeatureRepository;
 
     public QuizAttemptService(
             QuizRepository quizRepository,
             QuizQuestionRepository questionRepository,
             QuizOptionRepository optionRepository,
             QuizAttemptRepository attemptRepository,
-            QuizAttemptAnswerRepository attemptAnswerRepository
+            QuizAttemptAnswerRepository attemptAnswerRepository,
+            LearningLessonRepository lessonRepository,
+            LearningChapterRepository chapterRepository,
+            UserTierRepository userTierRepository,
+            TierFeatureRepository tierFeatureRepository
     ) {
         this.quizRepository = quizRepository;
         this.questionRepository = questionRepository;
         this.optionRepository = optionRepository;
         this.attemptRepository = attemptRepository;
         this.attemptAnswerRepository = attemptAnswerRepository;
+        this.lessonRepository = lessonRepository;
+        this.chapterRepository = chapterRepository;
+        this.userTierRepository = userTierRepository;
+        this.tierFeatureRepository = tierFeatureRepository;
     }
 
     @Transactional
     public QuizResponse getLessonQuiz(String lessonId) {
         QuizEntity quiz = quizRepository.findByLessonIdAndPublishedTrue(lessonId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
-        if (quiz.isRequiresPremium()) {
+
+        LearningLessonEntity lesson = lessonRepository.findByLessonIdAndPublishedTrue(lessonId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LESSON_NOT_FOUND));
+        LearningChapterEntity chapter = chapterRepository.findById(lesson.getChapterId())
+                .filter(LearningChapterEntity::isPublished)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CHAPTER_NOT_FOUND));
+        
+        boolean premiumUser = isPremiumUser();
+        List<LearningChapterEntity> chaptersInUnit = chapterRepository.findByUnitIdAndPublishedTrueOrderByOrderIndexAsc(chapter.getUnitId());
+        String firstChapterId = chaptersInUnit.isEmpty() ? null : chaptersInUnit.get(0).getChapterId();
+        boolean isFirstChapter = chapter.getChapterId().equals(firstChapterId);
+        int chapterLimit = getFeatureLimit("chapter_access");
+        boolean chapterLockedForFree = (chapterLimit == 1 && !isFirstChapter);
+
+        if ((quiz.isRequiresPremium() || chapter.isPremium() || lesson.isPremium() || chapterLockedForFree) && !premiumUser) {
             throw new BusinessException(ErrorCode.PREMIUM_REQUIRED);
         }
+
 
         String attemptId = "attempt-" + UUID.randomUUID();
         attemptRepository.save(new QuizAttemptEntity(attemptId, quiz.getQuizId(), lessonId, currentUserKey()));
@@ -209,4 +246,51 @@ public class QuizAttemptService {
         }
         return principal.email();
     }
+
+    private boolean isPremiumUser() {
+        String userKey = currentUserKey();
+        if (ANONYMOUS_USER_KEY.equals(userKey)) {
+            return false;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtService.Principal principal
+                && ("ADMIN".equals(principal.role()) || "SUPER_ADMIN".equals(principal.role()))) {
+            return true;
+        }
+        List<UserTierEntity> active = userTierRepository.findCurrentActiveByEmail(userKey, LocalDateTime.now());
+        if (active.isEmpty()) {
+            return false;
+        }
+        String title = active.get(0).getTier().getTitle();
+        return "plus".equalsIgnoreCase(title) || "pro".equalsIgnoreCase(title);
+    }
+
+    private int getFeatureLimit(String featureKey) {
+        String userKey = currentUserKey();
+        if (ANONYMOUS_USER_KEY.equals(userKey)) {
+            if ("chapter_access".equals(featureKey)) return 1;
+            return 0;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtService.Principal principal
+                && ("ADMIN".equals(principal.role()) || "SUPER_ADMIN".equals(principal.role()))) {
+            return -1;
+        }
+        
+        String tierTitle = "FREE";
+        List<UserTierEntity> active = userTierRepository.findCurrentActiveByEmail(userKey, LocalDateTime.now());
+        if (!active.isEmpty()) {
+            tierTitle = active.get(0).getTier().getTitle();
+        }
+        
+        List<TierFeatureEntity> features = tierFeatureRepository.findByTier_TitleIgnoreCase(tierTitle);
+        for (TierFeatureEntity feature : features) {
+            if (feature.getFeatureKey().equalsIgnoreCase(featureKey)) {
+                return feature.getLimitValue();
+            }
+        }
+        if ("chapter_access".equals(featureKey)) return 1;
+        return 0;
+    }
 }
+

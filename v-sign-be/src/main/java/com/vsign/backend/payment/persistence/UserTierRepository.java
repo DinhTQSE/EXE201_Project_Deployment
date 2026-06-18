@@ -25,6 +25,20 @@ public interface UserTierRepository extends JpaRepository<UserTierEntity, UUID> 
             @Param("userId") UUID userId,
             @Param("now") LocalDateTime now);
 
+    @Query("""
+        SELECT ut FROM UserTierEntity ut
+        JOIN FETCH ut.tier t
+        WHERE ut.user.email = :email
+          AND ut.isActive = true
+          AND ut.deletedAt IS NULL
+          AND ut.endTime > :now
+        ORDER BY t.amount DESC
+    """)
+    List<UserTierEntity> findCurrentActiveByEmail(
+            @Param("email") String email,
+            @Param("now") LocalDateTime now);
+
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
         SELECT ut FROM UserTierEntity ut

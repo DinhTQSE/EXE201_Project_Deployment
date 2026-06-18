@@ -11,6 +11,10 @@ public record SignatureAttemptResponse(
         String predictedGloss,
         Double confidence,
         Boolean correct,
-        List<String> feedbackCodes
+        List<String> feedbackCodes,
+        Integer currentUsage,
+        Integer maxLimit,
+        String warningMessage
 ) {
 }
+

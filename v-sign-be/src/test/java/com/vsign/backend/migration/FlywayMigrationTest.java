@@ -107,6 +107,11 @@ class FlywayMigrationTest {
                 Integer.class
         );
 
+        Integer tierFeaturesCount = jdbcTemplate.queryForObject(
+                "select count(*) from tier_features",
+                Integer.class
+        );
+
         assertThat(usersTableCount).isEqualTo(1);
         assertThat(rolesCount).isEqualTo(4);
         assertThat(dictionaryEntriesCount).isEqualTo(28);
@@ -124,6 +129,7 @@ class FlywayMigrationTest {
         assertThat(dictionaryVideoVariantsTableCount).isEqualTo(1);
         assertThat(fixtureUserAccountsCount).isEqualTo(6);
         assertThat(userUsageDailyTableCount).isEqualTo(1);
-        assertThat(appliedVersions).isEqualTo(27);
+        assertThat(tierFeaturesCount).isEqualTo(6);
+        assertThat(appliedVersions).isEqualTo(28);
     }
 }
