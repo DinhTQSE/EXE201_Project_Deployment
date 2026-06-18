@@ -48,4 +48,13 @@ public interface UserTierRepository extends JpaRepository<UserTierEntity, UUID> 
           AND t.amount > 0
     """)
     List<UserTierEntity> findExpiredPaidSubscriptions(@Param("now") LocalDateTime now);
+
+    @Query("""
+        SELECT DISTINCT ut.user.email FROM UserTierEntity ut
+        WHERE ut.isActive = true
+          AND ut.deletedAt IS NULL
+          AND ut.endTime > :now
+          AND ut.tier.amount > 0
+    """)
+    List<String> findActivePaidUserEmails(@Param("now") LocalDateTime now);
 }

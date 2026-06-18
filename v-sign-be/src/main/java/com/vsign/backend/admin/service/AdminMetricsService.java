@@ -12,9 +12,13 @@ import com.vsign.backend.learning.persistence.LessonProgressEntity;
 import com.vsign.backend.learning.persistence.LessonProgressRepository;
 import com.vsign.backend.learning.persistence.SignatureAttemptLogEntity;
 import com.vsign.backend.learning.persistence.SignatureAttemptLogRepository;
-import com.vsign.backend.monetization.persistence.PaymentOrderEntity;
-import com.vsign.backend.monetization.persistence.PaymentOrderRepository;
+import com.vsign.backend.payment.persistence.PayOSOrderEntity;
+import com.vsign.backend.payment.persistence.PayOSOrderRepository;
+import com.vsign.backend.payment.persistence.PaymentOrderStatus;
+import com.vsign.backend.payment.persistence.UserTierRepository;
+import com.vsign.backend.monetization.persistence.UserSubscriptionRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,7 +37,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AdminMetricsService {
     private final UserRepository userRepository;
-    private final PaymentOrderRepository paymentOrderRepository;
+    private final PayOSOrderRepository orderRepository;
+    private final UserSubscriptionRepository userSubscriptionRepository;
+    private final UserTierRepository userTierRepository;
     private final LessonProgressRepository lessonProgressRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final SignatureAttemptLogRepository signatureAttemptLogRepository;
@@ -42,7 +48,9 @@ public class AdminMetricsService {
 
     public AdminMetricsService(
             UserRepository userRepository,
-            PaymentOrderRepository paymentOrderRepository,
+            PayOSOrderRepository orderRepository,
+            UserSubscriptionRepository userSubscriptionRepository,
+            UserTierRepository userTierRepository,
             LessonProgressRepository lessonProgressRepository,
             QuizAttemptRepository quizAttemptRepository,
             SignatureAttemptLogRepository signatureAttemptLogRepository,
@@ -50,7 +58,9 @@ public class AdminMetricsService {
             JdbcTemplate jdbcTemplate
     ) {
         this.userRepository = userRepository;
-        this.paymentOrderRepository = paymentOrderRepository;
+        this.orderRepository = orderRepository;
+        this.userSubscriptionRepository = userSubscriptionRepository;
+        this.userTierRepository = userTierRepository;
         this.lessonProgressRepository = lessonProgressRepository;
         this.quizAttemptRepository = quizAttemptRepository;
         this.signatureAttemptLogRepository = signatureAttemptLogRepository;
@@ -63,8 +73,8 @@ public class AdminMetricsService {
         List<UsageRow> usageRows = usageRows(fromDate, toDate);
         Set<String> activeEmailsInRange = activeEmailsInRange(users, usageRows, fromDate, toDate);
 
-        List<PaymentOrderEntity> successfulPayments = paymentOrderRepository.findAll().stream()
-                .filter(payment -> "PAID".equalsIgnoreCase(payment.getStatus()))
+        List<PayOSOrderEntity> successfulPayments = orderRepository.findAll().stream()
+                .filter(payment -> PaymentOrderStatus.PAID == payment.getStatus())
                 .filter(payment -> withinRange(payment.getCreatedAt(), fromDate, toDate))
                 .toList();
 
@@ -88,13 +98,22 @@ public class AdminMetricsService {
         int activeSeconds = usageRows.stream().mapToInt(UsageRow::activeSeconds).sum();
         int averageActiveSeconds = activeEmailsInRange.isEmpty() ? 0 : activeSeconds / activeEmailsInRange.size();
 
+        Set<String> premiumEmails = new HashSet<>();
+        userSubscriptionRepository.findAll().stream()
+                .filter(sub -> "ACTIVE".equalsIgnoreCase(sub.getStatus()))
+                .map(sub -> sub.getEmail().trim().toLowerCase(Locale.ROOT))
+                .forEach(premiumEmails::add);
+        userTierRepository.findActivePaidUserEmails(LocalDateTime.now()).stream()
+                .map(email -> email.trim().toLowerCase(Locale.ROOT))
+                .forEach(premiumEmails::add);
+
         return new AdminMetricsOverviewResponse(
                 users.size(),
                 (int) users.stream().filter(user -> withinRange(user.getCreatedAt(), fromDate, toDate)).count(),
                 (int) users.stream().filter(UserEntity::isActive).count(),
                 activeEmailsInRange.size(),
-                (int) users.stream().filter(user -> "PREMIUM".equalsIgnoreCase(user.getAccountType())).count(),
-                successfulPayments.stream().mapToLong(PaymentOrderEntity::getAmount).sum(),
+                premiumEmails.size(),
+                successfulPayments.stream().mapToLong(PayOSOrderEntity::getAmount).sum(),
                 successfulPayments.size(),
                 contentReviewService.pendingReviewCount(),
                 completedLessons.size(),
@@ -170,6 +189,13 @@ public class AdminMetricsService {
         return rows.stream()
                 .filter(row -> withinRange(row.activityDate(), fromDate, toDate))
                 .toList();
+    }
+
+    private boolean withinRange(LocalDateTime dateTime, LocalDate fromDate, LocalDate toDate) {
+        if (dateTime == null) {
+            return false;
+        }
+        return withinRange(dateTime.toLocalDate(), fromDate, toDate);
     }
 
     private boolean withinRange(OffsetDateTime dateTime, LocalDate fromDate, LocalDate toDate) {

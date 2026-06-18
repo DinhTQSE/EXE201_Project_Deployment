@@ -40,6 +40,10 @@ public class UserSubscriptionEntity {
         this.expiresAt = expiresAt;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
     public String getPlanType() {
         return planType;
     }

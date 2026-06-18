@@ -39,11 +39,20 @@ insert into user_subscriptions (email, plan_type, status, started_at, expires_at
 ('learner.basic@vsign.test', null, 'INACTIVE', null, null),
 ('learner.premium@vsign.test', 'YEARLY', 'ACTIVE', '2026-05-01T00:00:00+07:00', '2027-05-01T00:00:00+07:00');
 
+insert into user_tier (id, uid, tier_id, start_time, end_time, is_active, created_at) values
+('00000000-0000-0000-0000-000000002002', '00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000003', '2026-05-01T00:00:00+07:00', '2027-05-01T00:00:00+07:00', true, '2026-05-01T00:00:00+07:00');
+
 insert into payment_orders
 (transaction_id, provider_transaction_id, provider, plan_id, plan_type, amount, currency, status, qr_code_data, deep_link, expires_at, qr_code_url, expires_in_seconds, retryable, user_email, created_at, updated_at)
 values
 ('txn-1001', 'MOMO-seed-1001', 'MOMO', 'pro-monthly', 'MONTHLY', 49000, 'VND', 'PENDING', 'VSIGN|MOMO|MONTHLY|txn-1001|49000', 'momo://payment/txn-1001', '2026-05-10T08:05:00+07:00', 'https://payments.example.invalid/qr/txn-1001', 300, true, 'learner.one@vsign.test', '2026-05-10T08:00:00+07:00', '2026-05-10T08:00:00+07:00'),
 ('txn-1002', 'ZALOPAY-seed-1002', 'ZALOPAY', 'pro-yearly', 'YEARLY', 199000, 'VND', 'PAID', 'VSIGN|ZALOPAY|YEARLY|txn-1002|199000', 'zalopay://payment/txn-1002', '2026-05-11T08:05:00+07:00', 'https://payments.example.invalid/qr/txn-1002', 300, false, 'learner.two@vsign.test', '2026-05-11T08:00:00+07:00', '2026-05-11T08:03:00+07:00');
+
+insert into payment_order
+(order_id, uid, tier_id, order_code, amount, payment_link_id, checkout_url, qr_code, status, paid_at, expired_at, description, is_active, created_at, updated_at)
+values
+('00000000-0000-0000-0000-000000001001', '00000000-0000-0000-0000-000000000101', '00000000-0000-0000-0000-000000000002', 1001, 49000, 'link-1001', 'https://checkout.example/1001', 'qr-1001', 'PENDING', null, '2026-05-10T08:05:00+07:00', null, true, '2026-05-10T08:00:00+07:00', '2026-05-10T08:00:00+07:00'),
+('00000000-0000-0000-0000-000000001002', '00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000003', 1002, 199000, 'link-1002', 'https://checkout.example/1002', 'qr-1002', 'PAID', '2026-05-11T08:03:00+07:00', '2026-05-11T08:05:00+07:00', null, true, '2026-05-11T08:00:00+07:00', '2026-05-11T08:03:00+07:00');
 
 insert into admin_user_accounts
 (id, email, display_name, role, status, account_type, created_at)
