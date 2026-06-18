@@ -90,10 +90,22 @@ public class PayOSWebhookService {
         List<UserTierEntity> existing = userTierRepository
                 .findCurrentActiveByUserIdForUpdate(userId, LocalDateTime.now());
 
-        boolean hasPaid = existing.stream().anyMatch(ut -> ut.getTier().getAmount() > 0);
-        if (hasPaid) {
-            log.info("User {} already has active paid subscription, skipping upgrade", userId);
-            return;
+        List<UserTierEntity> activePaid = existing.stream()
+                .filter(ut -> ut.getTier().getAmount() > 0)
+                .toList();
+
+        if (!activePaid.isEmpty()) {
+            boolean isUpgrade = activePaid.stream()
+                    .allMatch(ut -> order.getTier().getAmount() > ut.getTier().getAmount());
+            if (isUpgrade) {
+                for (UserTierEntity oldTier : activePaid) {
+                    oldTier.setIsActive(false);
+                    userTierRepository.save(oldTier);
+                }
+            } else {
+                log.info("User {} already has active paid subscription of same or higher tier, skipping upgrade", userId);
+                return;
+            }
         }
 
         UserTierEntity userTier = new UserTierEntity();

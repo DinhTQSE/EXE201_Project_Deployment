@@ -121,9 +121,21 @@ public class AdminPaymentService {
         List<UserTierEntity> existing = userTierRepository
                 .findCurrentActiveByUserId(userId, LocalDateTime.now());
 
-        boolean hasPaid = existing.stream().anyMatch(ut -> ut.getTier().getAmount() > 0);
-        if (hasPaid) {
-            return;
+        List<UserTierEntity> activePaid = existing.stream()
+                .filter(ut -> ut.getTier().getAmount() > 0)
+                .toList();
+
+        if (!activePaid.isEmpty()) {
+            boolean isUpgrade = activePaid.stream()
+                    .allMatch(ut -> order.getTier().getAmount() > ut.getTier().getAmount());
+            if (isUpgrade) {
+                for (UserTierEntity oldTier : activePaid) {
+                    oldTier.setIsActive(false);
+                    userTierRepository.save(oldTier);
+                }
+            } else {
+                return;
+            }
         }
 
         UserTierEntity userTier = new UserTierEntity();

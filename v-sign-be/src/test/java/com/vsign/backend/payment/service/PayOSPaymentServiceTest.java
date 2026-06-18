@@ -147,6 +147,45 @@ class PayOSPaymentServiceTest {
         verify(userTierRepository, never()).save(any());
     }
 
+    @Test
+    void handlePayOSReturn_deactivatesLowerPaidSubscriptionAndActivatesNewHigherTier() {
+        UserEntity owner = user(UUID.randomUUID());
+        owner.setEmail("owner@test.com");
+        owner.setFullName("John Doe");
+
+        TierEntity plusTier = tier(UUID.randomUUID(), "plus", 49000);
+        TierEntity proTier = tier(UUID.randomUUID(), "pro", 99000);
+
+        UserTierEntity activePlus = new UserTierEntity();
+        activePlus.setTier(plusTier);
+        activePlus.setIsActive(true);
+
+        PayOSOrderEntity order = new PayOSOrderEntity();
+        order.setUser(owner);
+        order.setTier(proTier);
+        order.setAmount(99000);
+        order.setOrderCode(999L);
+        order.setStatus(PaymentOrderStatus.PENDING);
+
+        when(userRepository.findByEmailIgnoreCase("owner@test.com")).thenReturn(Optional.of(owner));
+        when(orderRepository.findByOrderCode(999L)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userTierRepository.findCurrentActiveByUserIdForUpdate(eq(owner.getId()), any()))
+                .thenReturn(List.of(activePlus));
+
+        PayOSReturnRequest req = new PayOSReturnRequest();
+        req.setOrderCode(999L);
+        req.setCancel(false);
+        req.setStatus("PAID");
+
+        var response = service.handlePayOSReturn("owner@test.com", req);
+
+        assertThat(response.getResolvedStatus()).isEqualTo("PAID");
+        assertThat(activePlus.getIsActive()).isFalse();
+        verify(userTierRepository).save(activePlus);
+        verify(userTierRepository).save(argThat(ut -> ut.getTier() == proTier && ut.getIsActive()));
+    }
+
     private UserEntity user(UUID id) {
         UserEntity u = new UserEntity();
         u.setId(id);

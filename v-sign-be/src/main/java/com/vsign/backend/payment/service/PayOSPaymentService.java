@@ -53,11 +53,12 @@ public class PayOSPaymentService {
             throw new IllegalArgumentException("Cannot purchase free tier");
         }
 
-        boolean hasPaid = userTierRepository
-                .findCurrentActiveByUserId(user.getId(), LocalDateTime.now())
-                .stream().anyMatch(ut -> ut.getTier().getAmount() > 0);
-        if (hasPaid) {
-            throw new IllegalStateException("User already has an active paid subscription");
+        List<UserTierEntity> activeTiers = userTierRepository.findCurrentActiveByUserId(user.getId(), LocalDateTime.now());
+        boolean hasHigherOrEqualPaid = activeTiers.stream()
+                .filter(ut -> ut.getTier().getAmount() > 0)
+                .anyMatch(ut -> ut.getTier().getAmount() >= tier.getAmount());
+        if (hasHigherOrEqualPaid) {
+            throw new IllegalStateException("User already has an active paid subscription of the same or higher tier");
         }
 
         long orderCode = generateOrderCode();
@@ -174,10 +175,22 @@ public class PayOSPaymentService {
         List<UserTierEntity> existing = userTierRepository
                 .findCurrentActiveByUserIdForUpdate(userId, LocalDateTime.now());
 
-        boolean hasPaid = existing.stream().anyMatch(ut -> ut.getTier().getAmount() > 0);
-        if (hasPaid) {
-            log.info("User {} already has active paid subscription, skipping upgrade", userId);
-            return;
+        List<UserTierEntity> activePaid = existing.stream()
+                .filter(ut -> ut.getTier().getAmount() > 0)
+                .toList();
+
+        if (!activePaid.isEmpty()) {
+            boolean isUpgrade = activePaid.stream()
+                    .allMatch(ut -> order.getTier().getAmount() > ut.getTier().getAmount());
+            if (isUpgrade) {
+                for (UserTierEntity oldTier : activePaid) {
+                    oldTier.setIsActive(false);
+                    userTierRepository.save(oldTier);
+                }
+            } else {
+                log.info("User {} already has active paid subscription of same or higher tier, skipping upgrade", userId);
+                return;
+            }
         }
 
         UserTierEntity userTier = new UserTierEntity();

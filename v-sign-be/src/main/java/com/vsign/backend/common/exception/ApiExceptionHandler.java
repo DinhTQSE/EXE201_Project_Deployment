@@ -64,4 +64,22 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(ErrorCode.FORBIDDEN.status())
                 .body(ApiErrorResponse.of(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.defaultMessage()));
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException exception) {
+        return ResponseEntity.status(ErrorCode.INVALID_REQUEST.status())
+                .body(ApiErrorResponse.of(ErrorCode.INVALID_REQUEST, exception.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalState(IllegalStateException exception) {
+        return ResponseEntity.status(ErrorCode.INVALID_REQUEST.status())
+                .body(ApiErrorResponse.of(ErrorCode.INVALID_REQUEST, exception.getMessage()));
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ApiErrorResponse> handleSecurity(SecurityException exception) {
+        return ResponseEntity.status(ErrorCode.FORBIDDEN.status())
+                .body(ApiErrorResponse.of(ErrorCode.FORBIDDEN, exception.getMessage()));
+    }
 }
