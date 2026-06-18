@@ -16,6 +16,8 @@ import com.vsign.backend.payment.persistence.UserTierEntity;
 import com.vsign.backend.payment.persistence.UserTierRepository;
 import com.vsign.backend.auth.dto.PasswordResetCompleteRequest;
 import com.vsign.backend.common.mail.EmailService;
+import com.vsign.backend.gamification.persistence.GamificationProfileEntity;
+import com.vsign.backend.gamification.persistence.GamificationProfileRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
@@ -38,19 +40,22 @@ public class AuthService {
     private final TierRepository tierRepository;
     private final UserTierRepository userTierRepository;
     private final EmailService emailService;
+    private final GamificationProfileRepository gamificationProfileRepository;
 
     @Value("${app.password-reset.frontend-url:http://localhost:5173/reset-password}")
     private String passwordResetUrl;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        JwtService jwtService, TierRepository tierRepository,
-                       UserTierRepository userTierRepository, EmailService emailService) {
+                       UserTierRepository userTierRepository, EmailService emailService,
+                       GamificationProfileRepository gamificationProfileRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.tierRepository = tierRepository;
         this.userTierRepository = userTierRepository;
         this.emailService = emailService;
+        this.gamificationProfileRepository = gamificationProfileRepository;
     }
 
     @Transactional
@@ -73,6 +78,13 @@ public class AuthService {
         user.setActive(true);
 
         UserEntity saved = userRepository.save(user);
+
+        // Create gamification profile
+        gamificationProfileRepository.save(new GamificationProfileEntity(
+                email,
+                "user-" + Integer.toUnsignedString(email.hashCode()),
+                saved.getFullName()
+        ));
 
         var freeTierOpt = tierRepository.findByTitleIgnoreCaseAndIsActiveTrueAndDeletedAtIsNull("free");
         if (freeTierOpt.isEmpty()) {

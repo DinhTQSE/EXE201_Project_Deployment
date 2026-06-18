@@ -124,6 +124,6 @@ class FlywayMigrationTest {
         assertThat(dictionaryVideoVariantsTableCount).isEqualTo(1);
         assertThat(fixtureUserAccountsCount).isEqualTo(6);
         assertThat(userUsageDailyTableCount).isEqualTo(1);
-        assertThat(appliedVersions).isEqualTo(26);
+        assertThat(appliedVersions).isEqualTo(27);
     }
 }

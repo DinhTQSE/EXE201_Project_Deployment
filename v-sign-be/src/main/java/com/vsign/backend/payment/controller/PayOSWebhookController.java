@@ -1,5 +1,7 @@
 package com.vsign.backend.payment.controller;
 
+import com.vsign.backend.common.exception.BusinessException;
+import com.vsign.backend.common.exception.ErrorCode;
 import com.vsign.backend.payment.service.PayOSWebhookService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,13 @@ public class PayOSWebhookController {
         try {
             webhookService.handlePayOSWebhook(data);
             return ResponseEntity.ok("OK");
+        } catch (BusinessException e) {
+            if (e.errorCode() == ErrorCode.NOT_FOUND) {
+                log.warn("PayOS webhook ignored: {}", e.getMessage());
+                return ResponseEntity.ok("Order not found, ignored");
+            }
+            log.error("PayOS webhook business error: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Webhook processing error");
         } catch (Exception e) {
             log.error("PayOS webhook processing failed: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("Webhook processing error");

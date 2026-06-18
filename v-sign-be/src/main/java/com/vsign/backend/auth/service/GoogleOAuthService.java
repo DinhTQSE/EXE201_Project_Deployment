@@ -9,6 +9,8 @@ import com.vsign.backend.common.security.JwtService;
 import com.vsign.backend.payment.persistence.TierRepository;
 import com.vsign.backend.payment.persistence.UserTierEntity;
 import com.vsign.backend.payment.persistence.UserTierRepository;
+import com.vsign.backend.gamification.persistence.GamificationProfileEntity;
+import com.vsign.backend.gamification.persistence.GamificationProfileRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -38,6 +40,7 @@ public class GoogleOAuthService {
     private final UserTierRepository userTierRepository;
     private final EmailService emailService;
     private final RestTemplate restTemplate;
+    private final GamificationProfileRepository gamificationProfileRepository;
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
@@ -60,13 +63,15 @@ public class GoogleOAuthService {
             JwtService jwtService,
             TierRepository tierRepository,
             UserTierRepository userTierRepository,
-            EmailService emailService) {
+            EmailService emailService,
+            GamificationProfileRepository gamificationProfileRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.tierRepository = tierRepository;
         this.userTierRepository = userTierRepository;
         this.emailService = emailService;
+        this.gamificationProfileRepository = gamificationProfileRepository;
         this.restTemplate = new RestTemplate();
     }
 
@@ -172,6 +177,13 @@ public class GoogleOAuthService {
         user.setActive(true);
 
         UserEntity saved = userRepository.save(user);
+
+        // Create gamification profile
+        gamificationProfileRepository.save(new GamificationProfileEntity(
+                email,
+                "user-" + Integer.toUnsignedString(email.hashCode()),
+                saved.getFullName()
+        ));
 
         // Seed default free tier
         var freeTierOpt = tierRepository.findByTitleIgnoreCaseAndIsActiveTrueAndDeletedAtIsNull("free");

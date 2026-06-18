@@ -1,6 +1,8 @@
 package com.vsign.backend.payment.service;
 
 import com.vsign.backend.payment.persistence.*;
+import com.vsign.backend.common.exception.BusinessException;
+import com.vsign.backend.common.exception.ErrorCode;
 import com.vsign.backend.common.mail.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -115,7 +117,7 @@ public class PayOSWebhookService {
 
     private PayOSOrderEntity lockOrder(long orderCode) {
         return orderRepository.findByOrderCodeForUpdate(orderCode)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderCode));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "Order not found: " + orderCode));
     }
 
     private void saveTransactionIfNew(PayOSOrderEntity order, WebhookData data,
